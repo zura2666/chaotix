@@ -1,0 +1,802 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String?   @unique
+  emailVerified       DateTime?
+  passwordHash        String?
+  name                String?
+  image               String?
+  walletAddress       String?   @unique  // primary wallet for SIWE login
+  referralCode        String    @unique
+  referredById        String?
+  referredBy          User?     @relation("Referrals", fields: [referredById], references: [id])
+  referredUsers       User[]    @relation("Referrals")
+  referralStatus      String    @default("NONE")   // NONE | PENDING | APPROVED (Partner program)
+  twitterHandle       String?
+  discordHandle       String?
+  telegramHandle      String?
+  referralPitch       String?
+  partnerShortSlug    String?   @unique            // e.g. "zura" -> chaotix.io/r/zura
+  referralApplications ReferralApplication[]
+  balance             Float     @default(1000)
+  isBanned            Boolean   @default(false)
+  isAdmin             Boolean   @default(false)
+  reputationScore     Float     @default(0)
+  badges              String    @default("[]")
+  trustLevel          Int       @default(0)
+  marketCreationLimit Int       @default(5)
+  flaggedAt           DateTime?
+  suspiciousScore     Float     @default(0)
+  botProbability      Float     @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  trustScore         Float     @default(0)
+  waitlistStatus     String    @default("none")   // none | waitlisted | invited | active
+  inviteCodeUsed     String?   // code used to redeem access
+  isFoundingTrader   Boolean   @default(false)
+  marketsCreated     Int       @default(0)
+  successfulMarkets Int       @default(0)
+  positions         Position[]
+  trades            Trade[]
+  creatorRewards    CreatorReward[]
+  referralEarnings   ReferralEarning[]
+  auditLogs          AuditLog[]
+  marketComments    MarketComment[]
+  liquidityPositions LiquidityPosition[]
+  walletAccounts    WalletAccount[]
+  userBalance      UserBalance?
+  deposits         Deposit[]
+  depositAddresses DepositAddress[]
+  notifications     Notification[]
+  username          String?   @unique
+  followers         UserFollow[] @relation("FollowFollowers")
+  following         UserFollow[] @relation("FollowFollowing")
+  copyTradingAsFollower CopyTrading[] @relation("CopyFollower")
+  copyTradingAsTrader   CopyTrading[] @relation("CopyTrader")
+  activities        Activity[]
+
+  oauth_provider   String?   // legacy: 'google' | 'facebook'
+  oauth_id         String?   // legacy provider user id
+  oauth_email      String?   // legacy
+  oauth_token      String?   // legacy
+  oauth_picture    String?   // legacy; prefer image
+
+  accounts         Account[]
+  sessions         Session[]
+
+  @@unique([oauth_provider, oauth_id])
+  @@index([referralCode])
+  @@index([referralStatus])
+  @@index([partnerShortSlug])
+  @@index([trustScore])
+  @@index([waitlistStatus])
+  @@index([username])
+  @@index([oauth_provider, oauth_id])
+  @@index([walletAddress])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires   DateTime
+
+  @@unique([identifier, token])
+}
+
+model WalletAccount {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletAddress String
+  chain         String    // ethereum | polygon | solana
+  verifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@unique([chain, walletAddress])
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([userId, chain])
+}
+
+model UserBalance {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance       Float    @default(0)
+  lockedBalance Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Deposit {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method    String   // crypto | paypal | card
+  asset     String   // USDC | USD | etc.
+  amount    Float
+  status    String   @default("pending") // pending | confirmed | failed
+  txHash    String?
+  externalId String? // PayPal order ID, Stripe payment intent ID, etc.
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DepositAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chain     String   // ethereum | polygon | solana
+  address   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, chain])
+  @@index([userId])
+  @@index([address])
+}
+
+model InviteCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  maxUses   Int      @default(1)
+  usedCount Int      @default(0)
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+
+  @@index([code])
+}
+
+model ReferralApplication {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  twitterHandle  String?
+  discordHandle  String?
+  telegramHandle String?
+  pitch          String?   // 500 chars max
+  status         String    @default("pending")  // pending | approved | rejected
+  createdAt      DateTime  @default(now())
+  reviewedAt     DateTime?
+  reviewedById   String?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Market {
+  id                  String    @id @default(cuid())
+  canonical           String    @unique
+  displayName         String
+  title               String?
+  description         String?
+  tags                String    @default("[]")
+  price               Float     @default(0.01)
+  volume              Float     @default(0)
+  volume24h           Float     @default(0)
+  priceChange24h      Float     @default(0)
+  tradeCount          Int       @default(0)
+  reserveTokens       Float     @default(0)
+  reserveShares       Float     @default(0)
+  categoryId          String?
+  category            Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  phase               String    @default("creation")
+  status              String    @default("active")
+  momentumScore       Float     @default(0)
+  circuitBreakerUntil DateTime?
+  createdById         String?
+  lastTradeAt         DateTime?
+  archivedAt          DateTime?
+  flaggedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  conceptHash        String?   // for merge/similarity
+  totalLpTokens      Float     @default(0)
+  totalLpFeesAccrued Float     @default(0)
+  isVerified         Boolean   @default(false)
+  verifiedAt         DateTime?
+  gravityScore       Float     @default(0)
+  survivalScore      Float     @default(0)
+  eventId            String?   // e.g. tech_week, creator_week
+  stage              String    @default("emerging")  // emerging | active | established | legendary | dead
+  positions          Position[]
+  creatorRewards     CreatorReward[]
+  marketMetrics      MarketMetrics?
+  trades             Trade[]
+  priceHistory       PricePoint[]
+  comments           MarketComment[]
+  liquidityPositions  LiquidityPosition[]
+  liquidityPool       LiquidityPool?
+  earlyTraders        MarketEarlyTrader[]
+  attentionSignals    AttentionSignal[]
+  moderationEntries   ModerationQueue[]
+  marketReputation    MarketReputation?
+  marketCreationFees  MarketCreationFee[]
+  liquidityRewards    LiquidityReward[]
+  suspiciousActivities SuspiciousActivity[]
+  entityLinks         MarketEntityLink[]
+  clusterMembers      MarketClusterMember[]
+  sentiment           MarketSentiment?
+  ownerships          MarketOwnership[]
+
+  @@index([tradeCount])
+  @@index([volume])
+  @@index([lastTradeAt])
+  @@index([status])
+  @@index([momentumScore])
+  @@index([conceptHash])
+  @@index([gravityScore])
+  @@index([eventId])
+  @@index([stage])
+  @@index([createdById])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([volume24h])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  markets     Market[]
+}
+
+model MarketEvent {
+  id          String   @id @default(cuid())
+  slug        String   @unique   // tech_week, creator_week, ai_week
+  name        String
+  startAt     DateTime
+  endAt       DateTime
+  boostFactor Float    @default(1.2)   // trending multiplier
+  createdAt   DateTime @default(now())
+}
+
+model PricePoint {
+  id        String   @id @default(cuid())
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  price     Float
+  timestamp DateTime @default(now())
+
+  @@index([marketId])
+}
+
+model Position {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId     String
+  market       Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  shares       Float     @default(0)
+  avgPrice     Float     @default(0)
+  totalBought  Float     @default(0)
+  totalSold    Float     @default(0)
+  realizedPnL  Float     @default(0)
+  createdAt    DateTime  @default(now())
+  lastTradeAt  DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, marketId])
+  @@index([marketId])
+  @@index([userId])
+}
+
+model CreatorReward {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  reward    Float
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([marketId])
+  @@index([userId])
+}
+
+model MarketMetrics {
+  marketId       String   @id
+  market         Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  volume24h      Float     @default(0)
+  traderCount24h Int      @default(0)
+  priceChange24h Float     @default(0)
+  updatedAt      DateTime @updatedAt
+}
+
+model Trade {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId      String
+  market        Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  side          String
+  shares        Float
+  price         Float
+  total         Float
+  fee           Float    @default(0)
+  feeToReferrer Float    @default(0)
+  referrerId    String?
+  createdAt     DateTime @default(now())
+
+  settlements   TradeSettlement[]
+
+  @@index([marketId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([marketId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model TradeSettlement {
+  id        String   @id @default(cuid())
+  tradeId   String
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  status    String   // pending | submitted | confirmed | failed
+  txHash    String?
+  chain     String?
+  settledAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@unique([tradeId])
+  @@index([status])
+}
+
+model ReferralEarning {
+  id         String   @id @default(cuid())
+  referrerId String
+  referrer   User     @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  tradeId    String?
+  amount     Float
+  createdAt  DateTime @default(now())
+
+  @@index([referrerId])
+  @@index([createdAt])
+  @@index([referrerId, createdAt])
+}
+
+model TradeAttempt {
+  id        String   @id @default(cuid())
+  userId    String?
+  marketId  String?
+  action    String
+  payload   String?
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String?
+  details   String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model AdminAlert {
+  id         String    @id @default(cuid())
+  type       String
+  severity   String    @default("medium")
+  resource   String?
+  resourceId String?
+  message    String
+  payload    String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String?
+  marketId  String?
+  payload   String?
+  createdAt DateTime @default(now())
+}
+
+model MarketComment {
+  id        String   @id @default(cuid())
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String
+  sentiment String?
+  createdAt DateTime @default(now())
+
+  @@index([marketId])
+  @@index([userId])
+}
+
+model SystemHealthMetric {
+  id        String   @id @default(cuid())
+  kind      String
+  value     Float
+  payload   String?
+  createdAt DateTime @default(now())
+
+  @@index([kind])
+  @@index([createdAt])
+}
+
+model LiquidityPool {
+  id             String   @id @default(cuid())
+  marketId       String   @unique
+  market         Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  totalLiquidity Float    @default(0)
+  totalLpShares  Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([marketId])
+}
+
+model LiquidityPosition {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId        String
+  market          Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  tokensDeposited Float    @default(0)
+  sharesDeposited Float    @default(0)
+  lpTokens        Float    @default(0)
+  feesEarned      Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, marketId])
+  @@index([marketId])
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model MarketCreationFee {
+  id        String   @id @default(cuid())
+  userId    String
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  amount    Float
+  refunded  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([marketId])
+  @@index([userId])
+}
+
+model LiquidityReward {
+  id        String   @id @default(cuid())
+  userId    String
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  reward    Float
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([marketId])
+  @@index([userId])
+}
+
+model MarketReputation {
+  marketId        String   @id
+  market          Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  traderCount     Int      @default(0)
+  tradeCount      Int      @default(0)
+  volumeScore     Float    @default(0)
+  ageScore        Float    @default(0)
+  reputationScore Float    @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model SuspiciousActivity {
+  id        String   @id @default(cuid())
+  userId    String?
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  type      String
+  details   String   // JSON
+  createdAt DateTime @default(now())
+
+  @@index([marketId])
+  @@index([userId])
+  @@index([type])
+}
+
+model MarketEarlyTrader {
+  id        String   @id @default(cuid())
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  userId    String
+  rank      Int      // 1 = first trader
+  createdAt DateTime @default(now())
+
+  @@unique([marketId, userId])
+  @@index([marketId])
+  @@index([userId])
+}
+
+model AttentionSignal {
+  id               String   @id @default(cuid())
+  marketId         String
+  market           Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  source           String   // internal_trading | comment_activity | market_views | unique_visitors
+  attentionScore   Float    @default(0)
+  attentionVelocity Float   @default(0)
+  attentionTrend   Float    @default(0)
+  windowStart      DateTime @default(now())
+  windowEnd        DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  @@index([marketId])
+  @@index([source])
+  @@index([createdAt])
+}
+
+model ManipulationAlert {
+  id         String    @id @default(cuid())
+  type       String    // coordinated_pump | referral_farm | trade_ring | volume_spoof
+  severity   String    @default("medium")
+  resource   String?
+  resourceId String?
+  message    String
+  payload    String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+model PlatformToken {
+  id              String   @id @default(cuid())
+  kind            String   // fee_collected | lp_incentive | referral_payout | treasury
+  amount          Float    @default(0)
+  referenceId     String?  // tradeId, marketId, etc.
+  payload         String?  // JSON details
+  createdAt       DateTime @default(now())
+
+  @@index([kind])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // price_spike | gravity_market | market_you_hold_moving | market_created_about_you | referral_trade | liquidity_opportunity
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime?
+  payload   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([readAt])
+  @@index([createdAt])
+}
+
+model MarketAlias {
+  id         String   @id @default(cuid())
+  canonical  String   // primary market canonical
+  alias      String   @unique  // variant: mbappe, kylian mbappe, mbappé, k.mbappe
+  normalized String   // normalized form for clustering
+  createdAt  DateTime @default(now())
+
+  @@index([canonical])
+  @@index([normalized])
+}
+
+model ModerationQueue {
+  id         String    @id @default(cuid())
+  marketId   String
+  market     Market    @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  reason     String    // illegal | harassment | spam
+  status     String    @default("pending")  // pending | reviewed | approved | removed
+  reviewedBy String?
+  reviewedAt DateTime?
+  payload    String?
+  createdAt  DateTime  @default(now())
+
+  @@index([marketId])
+  @@index([status])
+}
+
+// ---------- Phase 8: Intelligence ----------
+model MarketEntity {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // person | event | topic | org
+  normalized String  @unique
+  createdAt DateTime @default(now())
+  links     MarketEntityLink[]
+
+  @@index([type])
+  @@index([normalized])
+}
+
+model MarketEntityLink {
+  id        String   @id @default(cuid())
+  marketId  String
+  market    Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  entityId  String
+  entity    MarketEntity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  relevance Float    @default(1)
+
+  @@index([marketId])
+  @@index([entityId])
+}
+
+model MarketCluster {
+  id       String   @id @default(cuid())
+  name     String
+  createdAt DateTime @default(now())
+  members  MarketClusterMember[]
+
+  @@index([name])
+}
+
+model MarketClusterMember {
+  id         String   @id @default(cuid())
+  clusterId  String
+  cluster    MarketCluster @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  marketId   String
+  market     Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  similarity Float    @default(1)
+
+  @@unique([clusterId, marketId])
+  @@index([clusterId])
+  @@index([marketId])
+}
+
+model MarketSentiment {
+  marketId     String   @id
+  market       Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  bullishScore Float    @default(0)
+  bearishScore Float    @default(0)
+  neutralScore Float    @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+// ---------- Phase 9: Network effects ----------
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("FollowFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("FollowFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model CopyTrading {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("CopyFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  traderId    String
+  trader      User     @relation("CopyTrader", fields: [traderId], references: [id], onDelete: Cascade)
+  allocation  Float    @default(1)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, traderId])
+  @@index([followerId])
+  @@index([traderId])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // trade | market_created | market_trending | liquidity_added | referral_joined
+  payload   String?  // JSON
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+// ---------- Phase 10: Protocol ----------
+model MarketOwnership {
+  id       String   @id @default(cuid())
+  marketId String
+  market   Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  ownerId  String
+  share   Float    @default(0)
+
+  @@index([marketId])
+  @@index([ownerId])
+}
+
+model GovernanceProposal {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  createdBy   String
+  status      String   @default("active")  // active | passed | rejected | cancelled
+  createdAt   DateTime @default(now())
+  votes       GovernanceVote[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model GovernanceVote {
+  id         String   @id @default(cuid())
+  proposalId String
+  proposal   GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  userId     String
+  vote       String   // for | against | abstain
+
+  @@unique([proposalId, userId])
+  @@index([proposalId])
+  @@index([userId])
+}
+
+model TreasuryTransfer {
+  id        String   @id @default(cuid())
+  amount    Float
+  reason    String   // liquidity_incentive | creator_program | growth_campaign | other
+  createdAt DateTime @default(now())
+
+  @@index([reason])
+  @@index([createdAt])
+}

@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CHAOTIX AETHER DESIGN SYSTEM ───────────────────────────────────────── */
+:root {
+  /* Standard height for inputs and primary buttons (52px) */
+  --h-standard: 52px;
+  /* Surfaces */
+  --aether-page: #020617;
+  --aether-glow: #1e293b;
+  --aether-surface: #0B0F1A;
+  --aether-surface-hover: #0D121F;
+  --aether-card: #0B0F1A;
+  --aether-border: rgba(255, 255, 255, 0.05);
+  --aether-muted: #64748b;
+  /* Actions & semantics */
+  --aether-action: #10b981;
+  --aether-danger: #f43f5e;
+  --aether-neutral: #0f172a;
+  /* Typography */
+  --aether-heading: #f1f5f9;
+  --aether-body: #94a3b8;
+  /* Focus: subtle border + ring (no heavy outline) */
+  --aether-focus: rgba(16, 185, 129, 0.5);
+  --aether-selection-bg: rgba(16, 185, 129, 0.35);
+  --aether-selection-text: #fff;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    @apply scroll-smooth;
+    /* Reserve space for scrollbar so layout doesn't jump when modals/dropdowns open */
+    scrollbar-gutter: stable;
+    /* Whole-site 10% zoom: current 110% becomes the new 100% */
+    zoom: 1.1;
+  }
+  @supports not (zoom: 1.1) {
+    html {
+      font-size: 110%;
+    }
+  }
+
+  body {
+    color: var(--aether-body);
+    min-height: 100vh;
+    @apply leading-relaxed antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography — Aether */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tighter text-slate-100;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.75rem);
+  }
+
+  p {
+    @apply leading-relaxed text-slate-400;
+  }
+
+  /* Input/textarea focus: subtle border + ring (replaces default green outline) */
+  input:focus,
+  textarea:focus {
+    @apply outline-none;
+  }
+
+  /* High-visibility focus for buttons/links (keyboard) */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-emerald-500/60 ring-offset-2 ring-offset-black;
+  }
+
+  /* Lucide icons: use strokeWidth={1.5} in JSX or wrap in IconWrapper for consistent stroke */
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
+  }
+
+  ::selection {
+    background: var(--aether-selection-bg);
+    color: var(--aether-selection-text);
+  }
+}
+
+@layer components {
+  /* Wise layout: mobile px-4 (16px), very small px-3, then md/lg. No horizontal overflow. */
+  .max-container {
+    @apply mx-auto w-full max-w-[1440px] overflow-x-hidden;
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+  @media (min-width: 400px) {
+    .max-container {
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+  }
+  @media (min-width: 768px) {
+    .max-container {
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .max-container {
+      padding-left: 5rem;
+      padding-right: 5rem;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .glow-neon {
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  }
+  .glow-pink {
+    text-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+  }
+  .search-focal {
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.25), 0 0 24px rgba(16, 185, 129, 0.08);
+  }
+  .square-24 {
+    @apply flex h-[24px] w-[24px] shrink-0 items-center justify-center;
+  }
+  /* Premium: pixel-perfect icon wrapper (40px) */
+  .square-10 {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center;
+  }
+  /* Standard height for inputs and primary buttons */
+  .h-standard {
+    height: var(--h-standard);
+    min-height: var(--h-standard);
+  }
+}
