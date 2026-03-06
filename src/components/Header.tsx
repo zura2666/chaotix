@@ -204,7 +204,11 @@ export function Header() {
                             <div className="h-px bg-white/10" />
                             <nav className="py-3" aria-label="App navigation">
                               <Link href="/leaderboard" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>Leaderboard</Link>
-                              <Link href="/create" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>Create Market</Link>
+                              <Link href="/competitions" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>Competitions</Link>
+                              <Link href="/governance/proposals" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>Market Proposals</Link>
+                              {user.isAdmin && (
+                                <Link href="/create" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>Create Market</Link>
+                              )}
                               <Link href="/docs" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>APIs</Link>
                               <Link href="/wallet" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>Wallet</Link>
                               <Link href="/portfolio" className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white" onClick={() => setDropdown(false)}>Portfolio</Link>
@@ -286,6 +290,11 @@ export function Header() {
                 <Link href="/discover" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Discover</Link>
                 <Link href="/categories" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Categories</Link>
                 <Link href="/leaderboard" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Leaderboard</Link>
+                <Link href="/competitions" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Competitions</Link>
+                <Link href="/governance/proposals" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Market Proposals</Link>
+                {user?.isAdmin && (
+                  <Link href="/create" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Create Market</Link>
+                )}
                 <Link href="/wallet" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Wallet</Link>
                 <Link href="/portfolio" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Portfolio</Link>
                 <Link href="/create" onClick={closeMenu} className="flex min-h-11 items-center rounded-lg px-4 text-sm text-slate-300 hover:bg-white/5 hover:text-white">Create Market</Link>

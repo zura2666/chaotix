@@ -9,7 +9,8 @@ export type PlatformTokenKind =
   | "fee_collected"
   | "lp_incentive"
   | "referral_payout"
-  | "treasury";
+  | "treasury"
+  | "liquidity_seed";
 
 export async function recordFeeCollected(
   amount: number,
@@ -71,6 +72,23 @@ export async function recordTreasury(
       amount,
       referenceId: referenceId ?? null,
       payload: payload ? JSON.stringify(payload) : null,
+    },
+  });
+}
+
+/** Record liquidity seeded from treasury when a new market is created (accounting only). */
+export async function recordLiquiditySeed(
+  marketId: string,
+  tokenAmount: number,
+  shareAmount?: number
+): Promise<void> {
+  if (tokenAmount <= 0) return;
+  await prisma.platformToken.create({
+    data: {
+      kind: "liquidity_seed",
+      amount: tokenAmount,
+      referenceId: marketId,
+      payload: shareAmount != null ? JSON.stringify({ marketId, shareAmount }) : JSON.stringify({ marketId }),
     },
   });
 }

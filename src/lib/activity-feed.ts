@@ -10,6 +10,9 @@ const ACTIVITY_TYPES = [
   "market_trending",
   "liquidity_added",
   "referral_joined",
+  "asset_trade",
+  "asset_listing_created",
+  "asset_comment",
 ] as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];

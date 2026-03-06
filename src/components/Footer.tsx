@@ -13,6 +13,11 @@ const platformLinks = [
   { label: "Trending", href: "/discover?sort=trending" },
   { label: "Newest", href: "/discover?sort=newest" },
   { label: "Leaderboards", href: "/leaderboard" },
+  { label: "Competitions", href: "/competitions" },
+  { label: "Market Proposals", href: "/governance/proposals" },
+  { label: "Narrative Index", href: "/index" },
+  { label: "Analytics", href: "/analytics" },
+  { label: "Marketplace", href: "/marketplace" },
 ];
 
 const supportLinks = [

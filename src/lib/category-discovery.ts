@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { getMarketHealthScore } from "./markets";
 import { MIN_INITIAL_BUY_TO_ACTIVATE, MIN_HEALTH_SCORE_FOR_TRENDING } from "./constants";
+import { discoveryWhere } from "./discovery-filter";
 
 const TRENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
 const VELOCITY_WINDOW_MS = 60 * 60 * 1000;
@@ -10,10 +11,11 @@ function hasMinActivity(m: { volume: number; tradeCount: number }): boolean {
 }
 
 function baseWhere(categoryId: string | null) {
-  const where: { tradeCount: { gt: number }; volume: { gte: number }; status?: string; categoryId?: string | null } = {
+  const where = {
+    ...discoveryWhere(),
     tradeCount: { gt: 0 },
     volume: { gte: MIN_INITIAL_BUY_TO_ACTIVATE },
-  };
+  } as { tradeCount: { gt: number }; volume: { gte: number }; categoryId?: string | null; OR: unknown[] };
   if (categoryId) where.categoryId = categoryId;
   return where;
 }
@@ -72,10 +74,15 @@ export async function getTrendingByCategory(categoryId: string | null, limit = 1
 }
 
 export async function getNewestByCategory(categoryId: string | null, limit = 10) {
-  const where: { categoryId?: string | null; OR: unknown[] } = {
-    OR: [
-      { tradeCount: { gt: 0 }, volume: { gte: MIN_INITIAL_BUY_TO_ACTIVATE } },
-      { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+  const where: { categoryId?: string | null; AND: unknown[] } = {
+    AND: [
+      discoveryWhere(),
+      {
+        OR: [
+          { tradeCount: { gt: 0 }, volume: { gte: MIN_INITIAL_BUY_TO_ACTIVATE } },
+          { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+        ],
+      },
     ],
   };
   if (categoryId) where.categoryId = categoryId;

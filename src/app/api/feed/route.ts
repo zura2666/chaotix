@@ -35,8 +35,9 @@ export async function GET(req: NextRequest) {
         }));
       })();
   const trending = await getPredictedTrendingMarkets(5);
+  const { GRAVITY_THRESHOLD } = await import("@/lib/constants");
   const gravityMarkets = await prisma.market.findMany({
-    where: { status: "active", gravityScore: { gte: 5 } },
+    where: { status: "active", gravityScore: { gte: GRAVITY_THRESHOLD } },
     select: { id: true, canonical: true, displayName: true, gravityScore: true },
     orderBy: { gravityScore: "desc" },
     take: 5,

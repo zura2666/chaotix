@@ -58,6 +58,7 @@ import {
   recordReferralPayout,
   recordLpIncentive,
   recordTreasury,
+  recordLiquiditySeed,
 } from "./platform-token";
 import { onReferralTrade } from "./growth-triggers";
 import { runRiskChecks } from "./risk-engine";
@@ -71,6 +72,7 @@ import { computeClustersForMarket } from "./market-clustering";
 import { updateMarketSentiment } from "./market-sentiment";
 import { recordActivity } from "./activity-feed";
 import { mirrorTradeForCopyFollowers } from "./copy-trading";
+import { validateReferralNotAbuse } from "./referral-abuse";
 
 function totalShares(market: { positions: { shares: number }[] }): number {
   return market.positions.reduce((s, p) => s + p.shares, 0);
@@ -123,7 +125,7 @@ function usePoolAmm(market: { reserveTokens: number; reserveShares: number }): b
 export async function findOrCreateMarket(
   raw: string,
   userId?: string | null,
-  metadata?: { title?: string; description?: string; categoryId?: string; tags?: string[] }
+  metadata?: { title?: string; description?: string; categoryId?: string; tags?: string[]; isCoreMarket?: boolean }
 ) {
   const sanitized = sanitizeMarketString(raw);
   const resolved = await resolveCanonical(sanitized);
@@ -140,7 +142,8 @@ export async function findOrCreateMarket(
   });
   if (market) return { market };
 
-  if (userId) {
+  const isCore = metadata?.isCoreMarket === true;
+  if (userId && !isCore) {
     const [user, createdCount, since] = [
       prisma.user.findUnique({
         where: { id: userId },
@@ -185,8 +188,8 @@ export async function findOrCreateMarket(
   const tagsJson =
     tagsValidated.length > 0 ? JSON.stringify(tagsValidated.slice(0, 10)) : "[]";
 
-  // Phase 6: market creation fee (spam prevention)
-  if (userId) {
+  // Phase 6: market creation fee (spam prevention) — skip for core markets (admin-created)
+  if (userId && !isCore) {
     const creator = await prisma.user.findUnique({
       where: { id: userId },
       select: { balance: true },
@@ -211,11 +214,13 @@ export async function findOrCreateMarket(
       reserveShares,
       createdById: userId ?? null,
       conceptHash: conceptHash(canonical),
+      isCoreMarket: metadata?.isCoreMarket ?? false,
     },
   });
   await prisma.pricePoint.create({
     data: { marketId: market.id, price: market.price },
   });
+  recordLiquiditySeed(market.id, reserveTokens, reserveShares).catch(() => {});
   if (userId) {
     await prisma.marketOwnership.create({
       data: { marketId: market.id, ownerId: userId, share: 1 },
@@ -301,13 +306,15 @@ export async function executeBuy(params: {
   marketId: string;
   amount: number;
   referrerId?: string | null;
+  /** When true, trade is from market-activity simulation; excluded from leaderboards, no referral/copy/activity. */
+  isSystemTrade?: boolean;
 }) {
-  const { userId, marketId, amount, referrerId } = params;
+  const { userId, marketId, amount, referrerId, isSystemTrade = false } = params;
 
   const validAmount = validateBuyAmount(amount);
   if (!validAmount.ok) return { error: validAmount.error };
 
-  if (!validateReferrer(referrerId, userId)) {
+  if (!isSystemTrade && !validateReferrer(referrerId, userId)) {
     return { error: "Invalid referral" };
   }
 
@@ -385,8 +392,12 @@ export async function executeBuy(params: {
   const earlyBps = await getEarlyTraderFeeBps(marketId, userId);
   const feeBps = user.isFoundingTrader ? getFoundingTraderFeeBps(true) : earlyBps;
   const fee = Math.floor((cost * feeBps) / 10000);
-  const effectiveReferrerId =
-    referrerId && validateReferrer(referrerId, userId) ? referrerId : null;
+  let effectiveReferrerId =
+    !isSystemTrade && referrerId && validateReferrer(referrerId, userId) ? referrerId : null;
+  if (effectiveReferrerId) {
+    const abuse = await validateReferralNotAbuse(userId, effectiveReferrerId);
+    if (!abuse.ok) effectiveReferrerId = null;
+  }
   // Phase 6: 50% platform+referrer, 25% LP, 25% treasury. Referrer gets share of the 50%.
   const lpShare = Math.floor((fee * LP_FEE_BPS) / 100);
   const treasuryShare = Math.floor((fee * TREASURY_FEE_BPS) / 100);
@@ -424,6 +435,7 @@ export async function executeBuy(params: {
           fee,
           feeToReferrer,
           referrerId: effectiveReferrerId,
+          isSystemTrade,
         },
       });
       createdTradeId = trade.id;
@@ -460,9 +472,10 @@ export async function executeBuy(params: {
         marketUpdate.reserveTokens = newReserveT;
         marketUpdate.reserveShares = newReserveS;
       }
+      const marketVersion = (market as { version?: number }).version ?? 0;
       await tx.market.update({
-        where: { id: marketId },
-        data: marketUpdate,
+        where: { id: marketId, version: marketVersion },
+        data: { ...marketUpdate, version: marketVersion + 1 },
       });
       await tx.pricePoint.create({
         data: { marketId, price },
@@ -514,9 +527,10 @@ export async function executeBuy(params: {
   distributeFeeToLps(marketId, fee).catch(() => {});
   updateAttentionAfterTrade(marketId, cost).catch(() => {});
   updateMarketReputation(marketId).catch(() => {});
-  tryAwardFoundingTrader(userId).catch(() => {});
-  import("./milestone-notifications").then((m) => m.tryMilestoneTradeNotification(userId).catch(() => {})).catch(() => {});
-  checkWashTrading(marketId, userId, "buy", cost).catch(() => {});
+  if (!isSystemTrade) {
+    import("./milestone-notifications").then((m) => m.tryMilestoneTradeNotification(userId).catch(() => {})).catch(() => {});
+    checkWashTrading(marketId, userId, "buy", cost).catch(() => {});
+  }
   if (createdTradeId && fee > 0) {
     recordFeeCollected(fee, createdTradeId).catch(() => {});
     if (feeToReferrer > 0) {
@@ -527,16 +541,19 @@ export async function executeBuy(params: {
     if (treasuryShare > 0) recordTreasury(treasuryShare, createdTradeId, { marketId }).catch(() => {});
   }
   checkAndRefundMarketCreationFee(marketId).catch(() => {});
-  if (createdTradeId && platformFeeShare > 0) {
-    awardCreatorFeeShare(marketId, platformFeeShare, createdTradeId).catch(() => {});
-  }
   checkCreatorMilestones(marketId).catch(() => {});
   updateMarketStage(marketId).catch(() => {});
   updateMarketMetrics(marketId).catch(() => {});
   updateMarketSentiment(marketId).catch(() => {});
 
-  recordActivity(userId, "trade", { marketId, side: "buy", shares, cost, tradeId: createdTradeId }).catch(() => {});
-  mirrorTradeForCopyFollowers({ traderId: userId, marketId, side: "buy", amount: cost, shares }).catch(() => {});
+  if (!isSystemTrade) {
+    recordActivity(userId, "trade", { marketId, side: "buy", shares, cost, tradeId: createdTradeId }).catch(() => {});
+    mirrorTradeForCopyFollowers({ traderId: userId, marketId, side: "buy", amount: cost, shares }).catch(() => {});
+    tryAwardFoundingTrader(userId).catch(() => {});
+  }
+  if (!isSystemTrade && createdTradeId && platformFeeShare > 0) {
+    awardCreatorFeeShare(marketId, platformFeeShare, createdTradeId).catch(() => {});
+  }
 
   const updated = await prisma.market.findUnique({
     where: { id: marketId },
@@ -557,13 +574,15 @@ export async function executeSell(params: {
   marketId: string;
   shares: number;
   referrerId?: string | null;
+  /** When true, trade is from market-activity simulation; excluded from leaderboards, no referral/copy/activity. */
+  isSystemTrade?: boolean;
 }) {
-  const { userId, marketId, shares, referrerId } = params;
+  const { userId, marketId, shares, referrerId, isSystemTrade = false } = params;
 
   const validShares = validateSellShares(shares);
   if (!validShares.ok) return { error: validShares.error };
 
-  if (!validateReferrer(referrerId, userId)) {
+  if (!isSystemTrade && !validateReferrer(referrerId, userId)) {
     return { error: "Invalid referral" };
   }
 
@@ -628,8 +647,12 @@ export async function executeSell(params: {
   const earlyBpsSell = await getEarlyTraderFeeBps(marketId, userId);
   const feeBpsSell = user.isFoundingTrader ? getFoundingTraderFeeBps(true) : earlyBpsSell;
   const fee = Math.floor((proceeds * feeBpsSell) / 10000);
-  const effectiveReferrerId =
-    referrerId && validateReferrer(referrerId, userId) ? referrerId : null;
+  let effectiveReferrerId =
+    !isSystemTrade && referrerId && validateReferrer(referrerId, userId) ? referrerId : null;
+  if (effectiveReferrerId) {
+    const abuse = await validateReferralNotAbuse(userId, effectiveReferrerId);
+    if (!abuse.ok) effectiveReferrerId = null;
+  }
   const lpShareSell = Math.floor((fee * LP_FEE_BPS) / 100);
   const treasuryShareSell = Math.floor((fee * TREASURY_FEE_BPS) / 100);
   const platformReferrerPoolSell = fee - lpShareSell - treasuryShareSell;
@@ -680,6 +703,8 @@ export async function executeSell(params: {
           fee,
           feeToReferrer,
           referrerId: effectiveReferrerId,
+          realizedPnLContribution: realized,
+          isSystemTrade,
         },
       });
       createdTradeIdSell = trade.id;
@@ -716,9 +741,10 @@ export async function executeSell(params: {
         marketUpdate.reserveTokens = newReserveT;
         marketUpdate.reserveShares = newReserveS;
       }
+      const sellMarketVersion = (market as { version?: number }).version ?? 0;
       await tx.market.update({
-        where: { id: marketId },
-        data: marketUpdate,
+        where: { id: marketId, version: sellMarketVersion },
+        data: { ...marketUpdate, version: sellMarketVersion + 1 },
       });
       await tx.pricePoint.create({
         data: { marketId, price },
@@ -770,16 +796,18 @@ export async function executeSell(params: {
   distributeFeeToLps(marketId, fee).catch(() => {});
   updateAttentionAfterTrade(marketId, proceeds).catch(() => {});
   updateMarketReputation(marketId).catch(() => {});
-  tryAwardFoundingTrader(userId).catch(() => {});
-  import("./milestone-notifications").then((m) => m.tryMilestoneTradeNotification(userId).catch(() => {})).catch(() => {});
-  checkWashTrading(marketId, userId, "sell", proceeds).catch(() => {});
-  checkPriceSpike(marketId, price).catch(() => {});
-  if (usePoolAmm(market)) {
-    checkLargeDrain(marketId, userId, proceeds, market.reserveTokens).catch(() => {});
-  }
-  if (realized !== 0) {
-    updateReputationAfterTrade(userId, realized, realized > 0).catch(() => {});
-    evaluateBadges(userId).catch(() => {});
+  if (!isSystemTrade) {
+    tryAwardFoundingTrader(userId).catch(() => {});
+    import("./milestone-notifications").then((m) => m.tryMilestoneTradeNotification(userId).catch(() => {})).catch(() => {});
+    checkWashTrading(marketId, userId, "sell", proceeds).catch(() => {});
+    checkPriceSpike(marketId, price).catch(() => {});
+    if (usePoolAmm(market)) {
+      checkLargeDrain(marketId, userId, proceeds, market.reserveTokens).catch(() => {});
+    }
+    if (realized !== 0) {
+      updateReputationAfterTrade(userId, realized, realized > 0).catch(() => {});
+      evaluateBadges(userId).catch(() => {});
+    }
   }
   if (createdTradeIdSell && fee > 0) {
     recordFeeCollected(fee, createdTradeIdSell).catch(() => {});
@@ -791,7 +819,7 @@ export async function executeSell(params: {
     if (treasuryShareSell > 0) recordTreasury(treasuryShareSell, createdTradeIdSell, { marketId }).catch(() => {});
   }
   checkAndRefundMarketCreationFee(marketId).catch(() => {});
-  if (createdTradeIdSell && platformFeeShareSell > 0) {
+  if (!isSystemTrade && createdTradeIdSell && platformFeeShareSell > 0) {
     awardCreatorFeeShare(marketId, platformFeeShareSell, createdTradeIdSell).catch(() => {});
   }
   checkCreatorMilestones(marketId).catch(() => {});
@@ -799,8 +827,10 @@ export async function executeSell(params: {
   updateMarketMetrics(marketId).catch(() => {});
   updateMarketSentiment(marketId).catch(() => {});
 
-  recordActivity(userId, "trade", { marketId, side: "sell", shares: sellSharesRounded, proceeds, tradeId: createdTradeIdSell }).catch(() => {});
-  mirrorTradeForCopyFollowers({ traderId: userId, marketId, side: "sell", amount: proceeds, shares: sellSharesRounded }).catch(() => {});
+  if (!isSystemTrade) {
+    recordActivity(userId, "trade", { marketId, side: "sell", shares: sellSharesRounded, proceeds, tradeId: createdTradeIdSell }).catch(() => {});
+    mirrorTradeForCopyFollowers({ traderId: userId, marketId, side: "sell", amount: proceeds, shares: sellSharesRounded }).catch(() => {});
+  }
 
   const updated = await prisma.market.findUnique({
     where: { id: marketId },

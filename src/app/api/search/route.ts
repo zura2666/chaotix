@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeForLookup } from "@/lib/identifiers";
 
+/** Simple similarity: 1 = exact match, 0 = no match. Uses substring and length penalty. */
+function fuzzyScore(query: string, target: string): number {
+  const q = query.toLowerCase().trim();
+  const t = target.toLowerCase();
+  if (t === q) return 1;
+  if (t.startsWith(q)) return 0.9 - (t.length - q.length) * 0.01;
+  if (t.includes(q)) return 0.7 - (t.length - q.length) * 0.005;
+  const len = Math.min(q.length, t.length);
+  let match = 0;
+  for (let i = 0; i < len; i++) {
+    if (q[i] === t[i]) match++;
+  }
+  if (len > 0) return (match / len) * 0.5;
+  return 0;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
@@ -79,13 +95,12 @@ export async function GET(req: NextRequest) {
     idSet.add(m.id);
   }
 
-  const [markets, tagCandidates] = await Promise.all([
+  const [marketsRaw, tagCandidates] = await Promise.all([
     idSet.size > 0
       ? prisma.market.findMany({
           where: { id: { in: Array.from(idSet) } },
           include: { category: { select: { id: true, slug: true, name: true } } },
-          orderBy: [{ tradeCount: "desc" }, { volume: "desc" }],
-          take: 25,
+          take: 50,
         })
       : [],
     prisma.market.findMany({
@@ -109,6 +124,23 @@ export async function GET(req: NextRequest) {
     }
   }
   const tags = Array.from(tagSet).slice(0, 10);
+
+  const termForFuzzy = q.trim().toLowerCase();
+  const markets =
+    marketsRaw.length === 0
+      ? []
+      : [...marketsRaw]
+          .map((m) => ({
+            ...m,
+            _score:
+              fuzzyScore(termForFuzzy, m.canonical) * 0.4 +
+              fuzzyScore(termForFuzzy, m.displayName) * 0.6 +
+              (m.tradeCount ?? 0) * 1e-6 +
+              (m.volume ?? 0) * 1e-9,
+          }))
+          .sort((a, b) => b._score - a._score)
+          .slice(0, 25)
+          .map(({ _score, ...m }) => m);
 
   return NextResponse.json({
     markets,

@@ -90,6 +90,9 @@ export function AdminDashboard() {
         <Link href="/admin/market-intelligence" className="text-sm text-emerald-400 hover:underline">
           Market intelligence
         </Link>
+        <Link href="/admin/narratives" className="text-sm text-emerald-400 hover:underline">
+          Narrative Management
+        </Link>
         <Link href="/admin/market-merge" className="text-sm text-emerald-400 hover:underline">
           Market merge
         </Link>

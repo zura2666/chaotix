@@ -18,11 +18,18 @@ import {
   Activity,
   Share2,
   MessageSquare,
+  HelpCircle,
+  Zap,
+  Rss,
+  ThumbsUp,
+  Lightbulb,
 } from "lucide-react";
 import { LiquidityPanel } from "@/components/LiquidityPanel";
 import { QuickTrade } from "@/components/QuickTrade";
+import { NarrativePostCard } from "@/components/NarrativePostCard";
 import { ChaotixCard } from "@/components/ui/ChaotixCard";
 import { ChaotixButton } from "@/components/ui/ChaotixButton";
+import { NSI_TOOLTIP, NSI_SCALE_SHORT } from "@/lib/narrative-strength";
 
 type PricePoint = { id: string; price: number; timestamp: string };
 type Position = {
@@ -47,18 +54,65 @@ type Comment = {
   createdAt: string;
   user: { id: string; name: string | null; email: string | null };
 };
-type Market = {
+type RelatedMarket = {
   id: string;
   canonical: string;
   displayName: string;
   price: number;
   volume: number;
   tradeCount: number;
+};
+type NarrativeEvent = {
+  id: string;
+  title: string;
+  description?: string | null;
+  source?: string | null;
+  timestamp: string;
+  impactScore: number;
+  reactionCount: number;
+};
+type MarketPost = {
+  id: string;
+  userId: string;
+  marketId: string;
+  content: string;
+  likes: number;
+  tradeId: string | null;
+  createdAt: string;
+  user: { id: string; name: string | null; email: string | null };
+  trade: {
+    id: string;
+    side: string;
+    shares: number;
+    price: number;
+    createdAt: string;
+  } | null;
+};
+type Market = {
+  id: string;
+  canonical: string;
+  displayName: string;
+  title?: string | null;
+  description?: string | null;
+  price: number;
+  volume: number;
+  tradeCount: number;
   reserveTokens?: number;
   reserveShares?: number;
+  narrativeScore?: number | null;
+  attentionVelocity?: number | null;
+  uniqueTraders24h?: number | null;
+  socialMomentum?: number | null;
+  volumeAcceleration?: number | null;
+  priceChange24h?: number | null;
   positions: Position[];
   priceHistory: PricePoint[];
   recentTrades: Trade[];
+  relatedMarkets?: RelatedMarket[];
+  narrativeEvents?: NarrativeEvent[];
+  postsTop?: MarketPost[];
+  postsRecent?: MarketPost[];
+  postsInsights?: MarketPost[];
 };
 
 const CHART_PERIODS = ["1H", "1D", "1W", "1M"] as const;
@@ -77,12 +131,19 @@ export function MarketView({
   const [position, setPosition] = useState<Position | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [liquidityStatus, setLiquidityStatus] = useState<"healthy" | "thin" | "risky" | null>(null);
+  const [liquidityStatus, setLiquidityStatus] = useState<"healthy" | "thin" | "critical" | null>(null);
   const [triggerSellMax, setTriggerSellMax] = useState<number | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("1D");
   const [priceJustUpdated, setPriceJustUpdated] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [postsTop, setPostsTop] = useState<MarketPost[]>(market.postsTop ?? []);
+  const [postsRecent, setPostsRecent] = useState<MarketPost[]>(market.postsRecent ?? []);
+  const [postsInsights, setPostsInsights] = useState<MarketPost[]>(market.postsInsights ?? []);
+  const [postContent, setPostContent] = useState("");
+  const [postTradeId, setPostTradeId] = useState<string>("");
+  const [postSubmitting, setPostSubmitting] = useState(false);
+  const [postError, setPostError] = useState("");
 
   const refreshMarket = useCallback(() => {
     fetch(`/api/markets/${encodeURIComponent(market.canonical)}`)
@@ -90,7 +151,11 @@ export function MarketView({
       .then((d) => {
         if (d.market) {
           const prevPrice = market.price;
-          setMarket(d.market);
+          setMarket((prev) => ({
+            ...d.market,
+            relatedMarkets: prev.relatedMarkets ?? d.market.relatedMarkets,
+            narrativeEvents: prev.narrativeEvents ?? d.market.narrativeEvents,
+          }));
           if (d.market.price !== prevPrice) {
             setPriceJustUpdated(true);
             const t = setTimeout(() => setPriceJustUpdated(false), PRICE_PULSE_MS);
@@ -139,6 +204,50 @@ export function MarketView({
       .then((d) => setComments(d.comments ?? []))
       .catch(() => setComments([]));
   }, [market.canonical]);
+
+  const refreshPosts = useCallback(() => {
+    const base = `/api/markets/${encodeURIComponent(market.canonical)}/posts`;
+    Promise.all([
+      fetch(`${base}?sort=top&limit=10`).then((r) => r.json()).then((d) => setPostsTop(d.posts ?? [])),
+      fetch(`${base}?sort=recent&limit=15`).then((r) => r.json()).then((d) => setPostsRecent(d.posts ?? [])),
+      fetch(`${base}?sort=insights&limit=10`).then((r) => r.json()).then((d) => setPostsInsights(d.posts ?? [])),
+    ]).catch(() => {});
+  }, [market.canonical]);
+
+  const submitPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPostError("");
+    const content = postContent.trim().slice(0, 2000);
+    if (!content) {
+      setPostError("Write something for the feed.");
+      return;
+    }
+    setPostSubmitting(true);
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const csrfMatch = typeof document !== "undefined" ? document.cookie.match(/csrf_token=([^;]+)/) : null;
+      if (csrfMatch?.[1]) headers["x-csrf-token"] = decodeURIComponent(csrfMatch[1]);
+      const res = await fetch(`/api/markets/${encodeURIComponent(market.canonical)}/posts`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ content, tradeId: postTradeId || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPostError(data.error ?? "Failed to post");
+        return;
+      }
+      setPostContent("");
+      setPostTradeId("");
+      if (data.post) {
+        setPostsRecent((prev) => [data.post, ...prev]);
+        if (data.post.tradeId) setPostsInsights((prev) => [data.post, ...prev]);
+      }
+      refreshPosts();
+    } finally {
+      setPostSubmitting(false);
+    }
+  };
 
   const submitTradePayload = async (
     side: "buy" | "sell",
@@ -205,6 +314,9 @@ export function MarketView({
       ? (market.price - position.avgPrice) * position.shares
       : null;
 
+  const nsi = market.narrativeScore ?? market.price;
+  const narrativeMomentum = market.priceChange24h ?? 0;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 md:px-0">
       <Link
@@ -234,7 +346,7 @@ export function MarketView({
         </div>
       )}
 
-      {/* Market Header: name text-3xl font-semibold text-slate-100, canonical # text-sm text-slate-500, stats row */}
+      {/* Market Header: name, Narrative Strength, 24h Momentum */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-slate-100 md:text-3xl">
@@ -242,6 +354,15 @@ export function MarketView({
           </h1>
           <p className="mt-1 text-sm text-slate-500" title="Canonical market ID">
             #{market.canonical}
+          </p>
+          <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
+            <span title={NSI_TOOLTIP}>
+              Narrative Strength: <span className="font-mono text-emerald-400">{nsi.toFixed(2)}</span>
+            </span>
+            <span className={narrativeMomentum >= 0 ? "text-emerald-400" : "text-chaos-tradeDown"}>
+              24h Momentum: {narrativeMomentum >= 0 ? "+" : ""}
+              {(narrativeMomentum * 100).toFixed(1)}%
+            </span>
           </p>
         </div>
         <ChaotixButton
@@ -286,14 +407,94 @@ export function MarketView({
             </div>
           </ChaotixCard>
         )}
+        <ChaotixCard as="div" className="flex flex-1 min-w-0 items-center gap-3 p-4">
+          <Droplets className="h-5 w-5 shrink-0 text-slate-500" strokeWidth={1.5} />
+          <div>
+            <p className="text-xs text-slate-500">Liquidity health</p>
+            <p
+              className={`text-sm font-medium ${
+                liquidityStatus === "healthy"
+                  ? "text-emerald-400"
+                  : liquidityStatus === "thin"
+                  ? "text-amber-400"
+                  : liquidityStatus === "critical"
+                  ? "text-chaos-tradeDown"
+                  : "text-slate-400"
+              }`}
+              title={liquidityStatus ? "Healthy = sufficient, Thin = moderate, Critical = low liquidity" : "Loading…"}
+            >
+              {liquidityStatus === "healthy" ? "Healthy" : liquidityStatus === "thin" ? "Thin" : liquidityStatus === "critical" ? "Critical" : "—"}
+            </p>
+          </div>
+        </ChaotixCard>
+      </div>
+
+      {market.description && (
+        <ChaotixCard as="div" className="mb-6 p-4">
+          <h3 className="mb-2 text-sm font-medium text-slate-400">About</h3>
+          <p className="text-sm text-slate-300 whitespace-pre-wrap">{market.description}</p>
+        </ChaotixCard>
+      )}
+
+      {/* NSI derived metrics: attention velocity, narrative momentum, volume acceleration */}
+      <div className="mb-6 flex flex-wrap gap-4">
+        {(market.attentionVelocity != null || narrativeMomentum !== 0 || market.volumeAcceleration != null) && (
+          <>
+            {market.attentionVelocity != null && (
+              <ChaotixCard as="div" className="flex min-w-0 items-center gap-3 p-4">
+                <Activity className="h-5 w-5 shrink-0 text-slate-500" strokeWidth={1.5} />
+                <div>
+                  <p className="text-xs text-slate-500">Attention velocity</p>
+                  <p className="font-mono text-sm text-slate-100">
+                    {(market.attentionVelocity * 100).toFixed(2)}%
+                  </p>
+                </div>
+              </ChaotixCard>
+            )}
+            <ChaotixCard as="div" className="flex min-w-0 items-center gap-3 p-4">
+              <TrendingUp className="h-5 w-5 shrink-0 text-slate-500" strokeWidth={1.5} />
+              <div>
+                <p className="text-xs text-slate-500">Narrative momentum (24h)</p>
+                <p
+                  className={`font-mono text-sm ${
+                    narrativeMomentum > 0 ? "text-emerald-400" : narrativeMomentum < 0 ? "text-chaos-tradeDown" : "text-slate-100"
+                  }`}
+                >
+                  {narrativeMomentum >= 0 ? "+" : ""}
+                  {(narrativeMomentum * 100).toFixed(2)}%
+                </p>
+              </div>
+            </ChaotixCard>
+            {market.volumeAcceleration != null && (
+              <ChaotixCard as="div" className="flex min-w-0 items-center gap-3 p-4">
+                <Droplets className="h-5 w-5 shrink-0 text-slate-500" strokeWidth={1.5} />
+                <div>
+                  <p className="text-xs text-slate-500">Volume acceleration</p>
+                  <p className="font-mono text-sm text-slate-100">
+                    {(market.volumeAcceleration * 100).toFixed(1)}%
+                  </p>
+                </div>
+              </ChaotixCard>
+            )}
+          </>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          {/* Price + Chart: ChaotixCard p-4, Recharts emerald-500, period selector */}
+          {/* Narrative Strength (NSI) + Chart */}
           <ChaotixCard as="div" className="p-4">
             <div className="mb-2 flex items-center justify-between gap-4">
-              <h3 className="text-sm font-medium text-slate-400">Price</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-slate-400">Narrative Strength</h3>
+                <span
+                  className="inline-flex shrink-0 text-slate-500 transition-colors hover:text-slate-400"
+                  title={`${NSI_TOOLTIP} ${NSI_SCALE_SHORT}`}
+                  aria-label="Narrative Strength explanation"
+                >
+                  <HelpCircle className="h-4 w-4" strokeWidth={1.5} />
+                </span>
+              </div>
               {liquidityStatus && (
                 <span
                   className={`text-xs font-medium ${
@@ -303,8 +504,9 @@ export function MarketView({
                       ? "text-amber-400"
                       : "text-chaos-tradeDown"
                   }`}
+                  title="Liquidity health: Healthy = sufficient, Thin = moderate, Critical = low liquidity / high slippage"
                 >
-                  {liquidityStatus === "healthy" ? "Healthy" : liquidityStatus === "thin" ? "Thin" : "Risky"}
+                  Liquidity: {liquidityStatus === "healthy" ? "Healthy" : liquidityStatus === "thin" ? "Thin" : "Critical"}
                 </span>
               )}
             </div>
@@ -312,13 +514,17 @@ export function MarketView({
               className={`text-3xl font-mono font-semibold text-emerald-400 transition-opacity duration-300 ${
                 priceJustUpdated ? "animate-pulse" : ""
               }`}
-              title="Current price"
+              title={NSI_TOOLTIP}
             >
-              ${market.price.toFixed(4)}
+              {nsi.toFixed(2)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500" title={NSI_SCALE_SHORT}>
+              0.00 → irrelevant · 0.25 → niche · 0.50 → moderate · 0.75 → dominant · 1.00 → max
             </p>
             {chartData.length > 0 && (
               <>
                 <div className="mt-4 overflow-x-auto">
+                  <p className="mb-2 text-xs font-medium text-slate-500">Narrative Strength Over Time</p>
                   <div className="flex flex-nowrap gap-2 pb-1">
                     {CHART_PERIODS.map((p) => (
                       <ChaotixButton
@@ -362,11 +568,11 @@ export function MarketView({
                       />
                       <YAxis
                         domain={["auto", "auto"]}
-                        tickFormatter={(v) => `$${v.toFixed(3)}`}
+                        tickFormatter={(v) => v.toFixed(2)}
                         stroke="#64748b"
                       />
                       <Tooltip
-                        formatter={(v: number) => [`$${v.toFixed(4)}`, "Price"]}
+                        formatter={(v: number) => [v.toFixed(2), "Narrative Strength"]}
                         labelFormatter={(t) => new Date(t).toLocaleString()}
                         contentStyle={{
                           backgroundColor: "#0B0F1A",
@@ -422,6 +628,185 @@ export function MarketView({
                 ))}
               </div>
             )}
+          </ChaotixCard>
+
+          {/* Narrative Timeline */}
+          {market.narrativeEvents && market.narrativeEvents.length > 0 && (
+            <ChaotixCard as="div" className="p-4">
+              <h3 className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-400">
+                <Zap className="h-4 w-4" strokeWidth={1.5} />
+                {market.displayName} Narrative Timeline
+              </h3>
+              <div className="space-y-0 max-h-80 overflow-auto">
+                {market.narrativeEvents.map((e) => {
+                  const impact = e.impactScore;
+                  const impactVariant =
+                    impact > 0.3 ? "positive" : impact < -0.3 ? "negative" : "neutral";
+                  return (
+                    <div
+                      key={e.id}
+                      className="border-b border-white/5 px-3 py-3 last:border-b-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span
+                          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                          title={`Impact ${(impact * 100).toFixed(0)}%`}
+                          aria-hidden
+                          style={{
+                            backgroundColor:
+                              impactVariant === "positive"
+                                ? "var(--emerald-400, #34d399)"
+                                : impactVariant === "negative"
+                                ? "var(--chaos-tradeDown, #f87171)"
+                                : "#94a3b8",
+                          }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-slate-200">{e.title}</p>
+                          {e.description && (
+                            <p className="mt-0.5 text-xs text-slate-500">{e.description}</p>
+                          )}
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                            <span>
+                              {new Date(e.timestamp).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            {e.source && (
+                              <span className="text-slate-600">· {e.source}</span>
+                            )}
+                            {e.reactionCount > 0 && (
+                              <span>
+                                · {e.reactionCount} reaction{e.reactionCount !== 1 ? "s" : ""}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ChaotixCard>
+          )}
+
+          {/* Narrative Feed */}
+          <ChaotixCard as="div" className="p-4">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-medium text-slate-400">
+              <Rss className="h-4 w-4" strokeWidth={1.5} />
+              Narrative Feed
+            </h3>
+            {user && (
+              <form onSubmit={submitPost} className="mb-4">
+                <textarea
+                  value={postContent}
+                  onChange={(e) => setPostContent(e.target.value)}
+                  placeholder="Analysis, trade reasoning, or news — e.g. Bought AI at 0.71 — Nvidia earnings tomorrow."
+                  className="mb-2 w-full resize-y rounded border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:border-chaos-primary focus:outline-none"
+                  rows={2}
+                  maxLength={2000}
+                />
+                {market.recentTrades?.filter((t) => t.user?.id === user?.id).length ? (
+                  <div className="mb-2">
+                    <label className="mb-1 block text-xs text-slate-500">Link to a trade (optional — shows as trade card in Trader commentary)</label>
+                    <select
+                      value={postTradeId}
+                      onChange={(e) => setPostTradeId(e.target.value)}
+                      className="w-full max-w-xs rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-slate-200 focus:border-chaos-primary focus:outline-none"
+                    >
+                      <option value="">None</option>
+                      {market.recentTrades
+                        .filter((t) => t.user?.id === user?.id)
+                        .slice(0, 10)
+                        .map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.side} {t.shares.toFixed(2)} @ {t.price.toFixed(2)} — {new Date(t.createdAt).toLocaleString()}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                ) : null}
+                {postError && <p className="mb-2 text-xs text-red-400">{postError}</p>}
+                <ChaotixButton type="submit" disabled={postSubmitting} size="sm">
+                  {postSubmitting ? "Posting…" : "Post to feed"}
+                </ChaotixButton>
+              </form>
+            )}
+            <div className="grid gap-6 md:grid-cols-3">
+              <div>
+                <h4 className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                  Top posts
+                </h4>
+                <div className="max-h-64 space-y-0 overflow-auto">
+                  {postsTop.length === 0 ? (
+                    <p className="py-2 text-xs text-slate-500">No posts yet.</p>
+                  ) : (
+                    postsTop.slice(0, 8).map((p) => (
+                      <NarrativePostCard
+                        key={p.id}
+                        content={p.content}
+                        userName={p.user?.name ?? p.user?.email ?? null}
+                        createdAt={p.createdAt}
+                        likes={p.likes}
+                        trade={p.trade}
+                        showContentAsReason={!!p.trade}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+              <div>
+                <h4 className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <Rss className="h-3.5 w-3.5" />
+                  Recent posts
+                </h4>
+                <div className="max-h-64 space-y-0 overflow-auto">
+                  {postsRecent.length === 0 ? (
+                    <p className="py-2 text-xs text-slate-500">No posts yet.</p>
+                  ) : (
+                    postsRecent.slice(0, 8).map((p) => (
+                      <NarrativePostCard
+                        key={p.id}
+                        content={p.content}
+                        userName={p.user?.name ?? p.user?.email ?? null}
+                        createdAt={p.createdAt}
+                        likes={p.likes}
+                        trade={p.trade}
+                        showContentAsReason={!!p.trade}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+              <div>
+                <h4 className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Trader commentary
+                </h4>
+                <div className="max-h-64 space-y-0 overflow-auto">
+                  {postsInsights.length === 0 ? (
+                    <p className="py-2 text-xs text-slate-500">Posts that reference a trade appear here.</p>
+                  ) : (
+                    postsInsights.slice(0, 8).map((p) => (
+                      <NarrativePostCard
+                        key={p.id}
+                        content={p.content}
+                        userName={p.user?.name ?? p.user?.email ?? null}
+                        createdAt={p.createdAt}
+                        likes={p.likes}
+                        trade={p.trade}
+                        showContentAsReason={!!p.trade}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
           </ChaotixCard>
 
           {/* Comments */}
@@ -551,6 +936,27 @@ export function MarketView({
           </ChaotixCard>
         </div>
       </div>
+
+      {market.relatedMarkets && market.relatedMarkets.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-4 text-lg font-medium text-slate-200">Related markets</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {market.relatedMarkets.map((m) => (
+              <Link
+                key={m.id}
+                href={`/market/${encodeURIComponent(m.canonical)}`}
+                className="block rounded-lg border border-white/10 bg-slate-900/50 p-4 transition-colors hover:border-emerald-500/40 hover:bg-slate-800/50 focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                <p className="font-medium text-slate-100 truncate">{m.displayName}</p>
+                <p className="mt-1 text-sm font-mono text-emerald-400" title={NSI_TOOLTIP}>Narrative Strength {(m.price).toFixed(2)}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Vol ${m.volume.toFixed(0)} · {m.tradeCount} trades
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

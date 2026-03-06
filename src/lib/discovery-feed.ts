@@ -3,10 +3,12 @@ import { getMarketHealthScore } from "./markets";
 import { MIN_INITIAL_BUY_TO_ACTIVATE, PUBLIC_LAUNCH_MODE, GRAVITY_THRESHOLD } from "./constants";
 import { getMarketAttention } from "./attention";
 import { MARKET_STATUS_ACTIVE } from "./constants";
+import { computeNarrativeGravityScore } from "./narrative-discovery";
+import { discoveryWhere } from "./discovery-filter";
 
 const WINDOW_24H = 24 * 60 * 60 * 1000;
 const WINDOW_1H = 60 * 60 * 1000;
-// Phase 6: DiscoveryScore = volume_24h*0.4 + unique_traders*0.2 + price_momentum*0.2 + gravity_score*0.2
+// Narrative Discovery: rank by GravityScore = volume24h*0.4 + uniqueTraders*0.2 + attentionVelocity*0.2 + priceMomentum*0.2
 const DISCOVERY_VOLUME_WEIGHT = 0.4;
 const DISCOVERY_TRADERS_WEIGHT = 0.2;
 const DISCOVERY_MOMENTUM_WEIGHT = 0.2;
@@ -24,6 +26,7 @@ export async function getDiscoveryFeed(limit = 30) {
 
   const markets = await prisma.market.findMany({
     where: {
+      ...discoveryWhere(),
       status: MARKET_STATUS_ACTIVE,
       tradeCount: { gt: 0 },
       volume: { gte: MIN_INITIAL_BUY_TO_ACTIVATE },
@@ -40,6 +43,8 @@ export async function getDiscoveryFeed(limit = 30) {
     take: limit * 3,
   });
 
+  type M = (typeof markets)[0] & { volume24h?: number; uniqueTraders24h?: number; attentionVelocity?: number; priceChange24h?: number };
+
   const withScores: Array<Record<string, unknown>> = [];
   for (const m of markets) {
     const recentVol = m.trades.reduce((s: number, t: { total: number }) => s + t.total, 0);
@@ -47,10 +52,13 @@ export async function getDiscoveryFeed(limit = 30) {
       .filter((t: { createdAt: Date }) => t.createdAt >= since1h)
       .reduce((s: number, t: { total: number }) => s + t.total, 0);
     const uniqueTraders = new Set(m.trades.map((t: { userId: string }) => t.userId)).size;
-    const priceChange =
+    const priceChangePct =
       m.priceHistory.length >= 2 && m.priceHistory[0].price > 0
         ? ((m.price - m.priceHistory[0].price) / m.priceHistory[0].price) * 100
         : 0;
+    const priceChange24hDecimal = m.priceHistory.length >= 2 && m.priceHistory[0].price > 0
+      ? (m.price - m.priceHistory[0].price) / m.priceHistory[0].price
+      : 0;
     const health = getMarketHealthScore({
       volume: m.volume,
       tradeCount: m.tradeCount,
@@ -64,21 +72,26 @@ export async function getDiscoveryFeed(limit = 30) {
       else if (c.sentiment === "bearish") bearish++;
     });
     const sentiment = bullish > bearish ? "bullish" : bearish > bullish ? "bearish" : "neutral";
-    const gravityScore = (m as { gravityScore?: number }).gravityScore ?? 0;
-    const priceMomentum = Math.abs(priceChange);
-    const discoveryScore =
-      recentVol * DISCOVERY_VOLUME_WEIGHT +
-      uniqueTraders * DISCOVERY_TRADERS_WEIGHT +
-      priceMomentum * DISCOVERY_MOMENTUM_WEIGHT +
-      gravityScore * DISCOVERY_GRAVITY_WEIGHT;
+    const legacyGravity = (m as M).gravityScore ?? 0;
+    const volume24h = (m as M).volume24h ?? recentVol;
+    const uniqueTraders24h = (m as M).uniqueTraders24h ?? uniqueTraders;
+    const attentionVelocity = (m as M).attentionVelocity ?? 0;
+    const narrativeGravity = computeNarrativeGravityScore(
+      volume24h,
+      uniqueTraders24h,
+      attentionVelocity,
+      priceChange24hDecimal
+    );
+    const discoveryScore = narrativeGravity;
     let feedScore =
+      narrativeGravity * 5 +
       Math.log(1 + (m.momentumScore ?? 0)) * 2 +
       Math.log(1 + attention.attentionScore) * 1.5 +
       Math.log(1 + velocity1h) * 1.2 +
       uniqueTraders * 0.5 +
       health * 0.3 +
-      Math.abs(priceChange) * 0.1;
-    if (PUBLIC_LAUNCH_MODE && gravityScore >= GRAVITY_THRESHOLD) {
+      Math.abs(priceChangePct) * 0.1;
+    if (PUBLIC_LAUNCH_MODE && legacyGravity >= GRAVITY_THRESHOLD) {
       feedScore *= 1.2;
     }
 
@@ -91,7 +104,7 @@ export async function getDiscoveryFeed(limit = 30) {
       volume: m.volume,
       tradeCount: m.tradeCount,
       momentumScore: m.momentumScore,
-      priceChange,
+      priceChange: priceChangePct,
       liquidity: m.reserveTokens ?? 0,
       tradersCount: uniqueTraders,
       sentiment,

@@ -1,10 +1,12 @@
 /**
  * When a governance proposal passes, trigger treasury/creator flows and alerting.
+ * Early-stage: treasury transfer logic is featureFlag "future"; only alert, no transfer.
  */
 
 import { prisma } from "./db";
 import { createAdminAlert } from "./admin-alerts";
 import { auditLog } from "./audit";
+import { getFeatureFlag } from "./feature-flags";
 
 const TREASURY_REASON_GOVERNANCE_PASSED = "governance_proposal_passed";
 
@@ -23,6 +25,8 @@ export async function onProposalPassed(proposalId: string): Promise<void> {
     message: `Proposal passed: ${proposal.title}`,
     payload: { proposalId, title: proposal.title, createdBy: proposal.createdBy },
   });
+
+  if (getFeatureFlag("treasury_transfer") === "future") return;
 
   try {
     const transfer = await prisma.treasuryTransfer.create({

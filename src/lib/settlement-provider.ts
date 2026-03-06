@@ -1,9 +1,11 @@
 /**
  * On-chain settlement abstraction.
  * noopSettlementProvider: no verification. productionSettlementProvider: DB-backed settlement + optional wallet check.
+ * Early-stage: settlement providers are featureFlag "future"; always use noop.
  */
 
 import { prisma } from "./db";
+import { getFeatureFlag } from "./feature-flags";
 
 export type SettlementStatus = "pending" | "submitted" | "confirmed" | "failed";
 
@@ -124,5 +126,8 @@ export function setSettlementProvider(p: ISettlementProvider): void {
 }
 
 export function getSettlementProvider(): ISettlementProvider {
+  if (getFeatureFlag("settlement_providers") === "future") {
+    return noopSettlementProvider;
+  }
   return provider;
 }

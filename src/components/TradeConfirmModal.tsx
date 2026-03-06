@@ -57,9 +57,11 @@ export function TradeConfirmModal({
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-slate-500">Price</span>
+            <span className="text-slate-500" title="Narrative Strength reflects how dominant a narrative is in global attention and speculation.">
+              Narrative Strength
+            </span>
             <span className="font-mono text-emerald-400">
-              ${price.toFixed(4)}
+              {price.toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between">

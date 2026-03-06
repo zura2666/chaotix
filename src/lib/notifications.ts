@@ -15,7 +15,11 @@ export type NotificationType =
   | "milestone_trades"
   | "milestone_lp"
   | "lp_reward"
-  | "market_stage_upgrade";
+  | "market_stage_upgrade"
+  | "asset_price_alert"
+  | "bid_outbid"
+  | "trending_asset"
+  | "follower_activity";
 
 export async function createNotification(params: {
   userId: string;

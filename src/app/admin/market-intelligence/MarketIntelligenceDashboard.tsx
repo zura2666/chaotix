@@ -95,7 +95,7 @@ export function MarketIntelligenceDashboard() {
         title="Most resilient markets"
         rows={data.mostResilient}
         cols={[
-          { key: "price", label: "Price" },
+          { key: "price", label: "Narrative Strength" },
           { key: "volume", label: "Volume" },
           { key: "resilienceScore", label: "Resilience" },
         ]}
@@ -104,7 +104,7 @@ export function MarketIntelligenceDashboard() {
         title="Fastest growing (7d)"
         rows={data.fastestGrowing}
         cols={[
-          { key: "price", label: "Price" },
+          { key: "price", label: "Narrative Strength" },
           { key: "volume", label: "Volume" },
           { key: "growthRate7d", label: "Growth rate" },
         ]}
@@ -113,7 +113,7 @@ export function MarketIntelligenceDashboard() {
         title="Abnormal patterns"
         rows={data.abnormalPatterns}
         cols={[
-          { key: "price", label: "Price" },
+          { key: "price", label: "Narrative Strength" },
           { key: "priceVolatility", label: "Volatility" },
           { key: "growthRate7d", label: "Growth" },
         ]}

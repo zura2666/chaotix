@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { clsx } from "clsx";
+import { NSI_TOOLTIP } from "@/lib/narrative-strength";
 
 type Market = {
   id: string;
@@ -10,9 +11,13 @@ type Market = {
   tradeCount: number;
   priceChange?: number;
   recentVolume?: number;
+  uniqueTraders24h?: number;
   category?: { slug: string; name: string } | null;
   tags?: string[] | string;
 };
+
+/** Narrative Strength tooltip + interpretation. */
+const NSI_TITLE = `${NSI_TOOLTIP} Scale: 0.00 = irrelevant, 0.25 = niche, 0.50 = moderate, 0.75 = dominant, 1.00 = max.`;
 
 /** Normalize tags to string[] (API/DB may return JSON string). */
 function marketTags(tags: Market["tags"]): string[] {
@@ -76,10 +81,12 @@ function SparklineSvg({ points: rawPoints, isUp = true }: { points?: number[]; i
  * stats text-slate-400 text-sm; positive emerald-400, negative chaos-tradeDown.
  */
 export function MarketCard({ market }: { market: Market }) {
-  const change = market.priceChange ?? 0;
-  const isUp = change > 0;
-  const isDown = change < 0;
+  const momentum = market.priceChange ?? 0;
+  const isUp = momentum > 0;
+  const isDown = momentum < 0;
   const emoji = marketEmoji(market.canonical);
+  const nsi = market.price;
+  const tradersLabel = market.uniqueTraders24h != null ? market.uniqueTraders24h : market.tradeCount;
 
   return (
     <Link
@@ -103,16 +110,22 @@ export function MarketCard({ market }: { market: Market }) {
                 isDown && "text-chaos-tradeDown",
                 !isUp && !isDown && "text-slate-500"
               )}
-              aria-label="24h change"
+              aria-label="24h momentum"
             >
               24h {isUp && "+"}
-              {change.toFixed(1)}%
+              {momentum.toFixed(1)}%
             </span>
           </div>
           <div className="mt-2 flex items-baseline flex-wrap gap-x-4 gap-y-1 text-sm text-slate-400">
-            <span className="font-mono text-emerald-400">${market.price.toFixed(4)}</span>
-            <span>vol ${(market.volume ?? 0).toFixed(0)}</span>
-            <span>{market.tradeCount} trades</span>
+            <span className="font-mono text-emerald-400" title={NSI_TITLE}>
+              {nsi.toFixed(2)} Narrative Strength
+            </span>
+            <span className={clsx("tabular-nums", isUp && "text-emerald-400/90", isDown && "text-chaos-tradeDown/90")}>
+              {isUp && "+"}
+              {momentum.toFixed(1)}% 24h
+            </span>
+            <span>{tradersLabel} traders</span>
+            <span>${market.volume.toFixed(0)} vol</span>
           </div>
           {(market.category || (market.tags && market.tags.length > 0)) && (
             <div className="mt-2 flex flex-wrap gap-1.5">

@@ -11,6 +11,7 @@ import { MainLayout } from "@/components/MainLayout";
 import { MatrixBackground } from "@/components/MatrixBackground";
 import { GhostChartBackground } from "@/components/GhostChartBackground";
 import { Toaster } from "sonner";
+import { SocketProvider } from "@/components/providers/SocketProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,20 +45,22 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased text-slate-400 bg-black overflow-x-hidden flex flex-col min-h-screen`}
       >
         <MatrixBackground />
-        <Providers>
-          <AuthModalProvider>
-            <RefCapture />
-            <Header />
-            <Onboarding />
-            <main className="relative min-h-screen flex-1 overflow-hidden">
-              <GhostChartBackground />
-              <MainLayout>{children}</MainLayout>
-            </main>
-            <Footer />
-          </AuthModalProvider>
-          <Toaster theme="dark" position="top-center" />
-          <div id="auth-modal-portal" />
-        </Providers>
+        <SocketProvider>
+          <Providers>
+            <AuthModalProvider>
+              <RefCapture />
+              <Header />
+              <Onboarding />
+              <main className="relative min-h-screen flex-1 overflow-hidden">
+                <GhostChartBackground />
+                <MainLayout>{children}</MainLayout>
+              </main>
+              <Footer />
+            </AuthModalProvider>
+            <Toaster theme="dark" position="top-center" />
+            <div id="auth-modal-portal" />
+          </Providers>
+        </SocketProvider>
       </body>
     </html>
   );

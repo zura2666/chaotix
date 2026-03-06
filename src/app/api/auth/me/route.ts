@@ -20,6 +20,11 @@ export async function GET() {
         image: true,
         walletAddress: true,
         passwordHash: true,
+        seasonScore: true,
+        roiRank: true,
+        volumeRank: true,
+        narrativeRank: true,
+        rankTitle: true,
       },
     });
     if (dbUser && !dbUser.isBanned) {
@@ -33,6 +38,11 @@ export async function GET() {
           balance: dbUser.balance,
           isAdmin: dbUser.isAdmin,
           walletAddress: dbUser.walletAddress ?? undefined,
+          seasonScore: dbUser.seasonScore,
+          roiRank: dbUser.roiRank,
+          volumeRank: dbUser.volumeRank,
+          narrativeRank: dbUser.narrativeRank,
+          rankTitle: dbUser.rankTitle ?? undefined,
         },
         needsProfileCompletion: !dbUser.passwordHash,
       });
@@ -43,7 +53,7 @@ export async function GET() {
   if (legacyUser) {
     const withPassword = await prisma.user.findUnique({
       where: { id: legacyUser.id },
-      select: { passwordHash: true, walletAddress: true },
+      select: { passwordHash: true, walletAddress: true, seasonScore: true, roiRank: true, volumeRank: true, narrativeRank: true, rankTitle: true },
     });
     return NextResponse.json({
       user: {
@@ -55,6 +65,11 @@ export async function GET() {
         balance: legacyUser.balance,
         isAdmin: legacyUser.isAdmin,
         walletAddress: withPassword?.walletAddress ?? undefined,
+        seasonScore: withPassword?.seasonScore,
+        roiRank: withPassword?.roiRank,
+        volumeRank: withPassword?.volumeRank,
+        narrativeRank: withPassword?.narrativeRank,
+        rankTitle: withPassword?.rankTitle ?? undefined,
       },
       needsProfileCompletion: !withPassword?.passwordHash,
     });

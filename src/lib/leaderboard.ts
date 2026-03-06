@@ -1,8 +1,10 @@
 import { prisma } from "./db";
+import { getSystemUserId } from "./system-user";
 
 export async function getTopTraders(limit = 20) {
   const traders = await prisma.trade.groupBy({
     by: ["userId"],
+    where: { isSystemTrade: false },
     _sum: { total: true },
     _count: true,
   });
@@ -25,8 +27,12 @@ export async function getTopTraders(limit = 20) {
 
 /** Top by realized PnL (profit) */
 export async function getTopTradersByProfit(limit = 20) {
+  const systemUserId = await getSystemUserId();
   const positions = await prisma.position.findMany({
-    where: { realizedPnL: { gt: 0 } },
+    where: {
+      realizedPnL: { gt: 0 },
+      ...(systemUserId ? { userId: { not: systemUserId } } : {}),
+    },
     select: { userId: true, realizedPnL: true },
   });
   const byUser = new Map<string, number>();
@@ -51,7 +57,9 @@ export async function getTopTradersByProfit(limit = 20) {
 
 /** Best ROI: realized PnL / total cost basis (totalBought) */
 export async function getTopTradersByROI(limit = 20) {
+  const systemUserId = await getSystemUserId();
   const positions = await prisma.position.findMany({
+    where: systemUserId ? { userId: { not: systemUserId } } : undefined,
     select: { userId: true, realizedPnL: true, totalBought: true },
   });
   const byUser = new Map<string, { realized: number; cost: number }>();
@@ -87,6 +95,7 @@ export async function getTopTradersByROI(limit = 20) {
 /** Early discoverers: first to trade in many markets (high unique market count, early entry) */
 export async function getTopEarlyDiscoverers(limit = 20) {
   const trades = await prisma.trade.findMany({
+    where: { isSystemTrade: false },
     orderBy: { createdAt: "asc" },
     select: { userId: true, marketId: true, createdAt: true },
   });
@@ -121,7 +130,7 @@ export async function getTopReferrers(limit = 20) {
   const referrerIds = earnings.map((e) => e.referrerId);
   const users = await prisma.user.findMany({
     where: { id: { in: referrerIds } },
-    select: { id: true, name: true, email: true, referralCode: true },
+    select: { id: true, name: true, email: true, referralCode: true, badges: true },
   });
   const byId = new Map(users.map((u) => [u.id, u]));
   return earnings
@@ -135,7 +144,7 @@ export async function getTopReferrers(limit = 20) {
     .slice(0, limit);
 }
 
-/** Phase 7: Leaderboard by user reputation score (activity + PnL + market success + referrals). */
+/** Phase 7: Leaderboard by user reputation score. */
 export async function getTopByReputation(limit = 20) {
   const users = await prisma.user.findMany({
     where: { reputationScore: { gt: 0 } },
@@ -146,14 +155,76 @@ export async function getTopByReputation(limit = 20) {
       reputationScore: true,
       marketsCreated: true,
       successfulMarkets: true,
+      successfulTrades: true,
+      marketInfluenceScore: true,
+      badges: true,
     },
     orderBy: { reputationScore: "desc" },
     take: limit,
   });
   return users.map((u) => ({
-    user: { id: u.id, name: u.name, email: u.email },
+    user: { id: u.id, name: u.name, email: u.email, badges: u.badges },
     reputationScore: u.reputationScore,
     marketsCreated: u.marketsCreated,
     successfulMarkets: u.successfulMarkets,
+    successfulTrades: u.successfulTrades,
+    marketInfluenceScore: u.marketInfluenceScore,
   }));
+}
+
+/** Top Narrative Traders: by reputation + market influence (narrative discovery, early trades, profit). */
+export async function getTopNarrativeTraders(limit = 20) {
+  const systemUserId = await getSystemUserId();
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [{ reputationScore: { gt: 0 } }, { marketInfluenceScore: { gt: 0 } }],
+      ...(systemUserId ? { id: { not: systemUserId } } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      username: true,
+      reputationScore: true,
+      marketInfluenceScore: true,
+      successfulTrades: true,
+      badges: true,
+    },
+    orderBy: [{ reputationScore: "desc" }, { marketInfluenceScore: "desc" }],
+    take: limit * 2,
+  });
+  const withScore = users.map((u) => ({
+    user: { id: u.id, name: u.name, email: u.email, username: u.username, badges: u.badges },
+    narrativeScore: (u.reputationScore ?? 0) * 0.6 + (u.marketInfluenceScore ?? 0) * 0.4,
+    reputationScore: u.reputationScore,
+    marketInfluenceScore: u.marketInfluenceScore,
+    successfulTrades: u.successfulTrades ?? 0,
+  }));
+  withScore.sort((a, b) => b.narrativeScore - a.narrativeScore);
+  return withScore.slice(0, limit);
+}
+
+/** Top Market Creators: by count of markets created that have activity (tradeCount > 0). */
+export async function getTopMarketCreators(limit = 20) {
+  const created = await prisma.market.groupBy({
+    by: ["createdById"],
+    where: { createdById: { not: null }, tradeCount: { gt: 0 } },
+    _count: true,
+    _sum: { volume: true },
+  });
+  const creatorIds = created.map((c) => c.createdById!).filter(Boolean);
+  const users = await prisma.user.findMany({
+    where: { id: { in: creatorIds } },
+    select: { id: true, name: true, email: true, username: true, badges: true, marketsCreated: true, successfulMarkets: true },
+  });
+  const byId = new Map(users.map((u) => [u.id, u]));
+  return created
+    .map((c) => ({
+      user: byId.get(c.createdById!),
+      marketsCreated: c._count,
+      totalVolume: c._sum.volume ?? 0,
+    }))
+    .filter((r) => r.user)
+    .sort((a, b) => b.marketsCreated - a.marketsCreated)
+    .slice(0, limit);
 }

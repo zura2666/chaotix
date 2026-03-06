@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getFeatureFlag, futureFeatureResponse } from "@/lib/feature-flags";
 
 const REASONS = ["liquidity_incentive", "creator_program", "growth_campaign", "other"] as const;
 
 export async function POST(req: NextRequest) {
   const user = await getSession();
   if (!user?.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (getFeatureFlag("treasury_transfer") === "future") {
+    return NextResponse.json(
+      futureFeatureResponse("Treasury transfers are temporarily disabled."),
+      { status: 503 }
+    );
+  }
   const body = await req.json().catch(() => ({}));
   const amount = Number(body.amount);
   const reason = body.reason ?? "other";
@@ -25,6 +32,12 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   const user = await getSession();
   if (!user?.isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (getFeatureFlag("treasury_transfer") === "future") {
+    return NextResponse.json(
+      futureFeatureResponse("Treasury transfers are temporarily disabled."),
+      { status: 503 }
+    );
+  }
   const transfers = await prisma.treasuryTransfer.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,

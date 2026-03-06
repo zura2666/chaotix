@@ -1,0 +1,221 @@
+src/app/admin/narratives/NarrativeManagementView.tsx(127,64): error TS2322: Type '{ children: string; type: "submit"; disabled: boolean; size: string; }' is not assignable to type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+src/app/admin/narratives/NarrativeManagementView.tsx(193,71): error TS2322: Type '{ children: string; href: string; variant: "secondary"; size: string; }' is not assignable to type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+src/app/api/admin/referrals/approve/route.ts(49,16): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(arg: PrismaPromise<any>[], options?: { isolationLevel?: "Serializable" | undefined; } | undefined): Promise<any[]>', gave the following error.
+    Type 'Promise<void>' is not assignable to type 'PrismaPromise<any>'.
+      Types of property '[Symbol.toStringTag]' are incompatible.
+        Type 'string' is not assignable to type '"PrismaPromise"'.
+  Overload 2 of 2, '(fn: (prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>, options?: { ...; } | undefined): Promise<...>', gave the following error.
+    Argument of type '(Promise<void> | Prisma__ReferralApplicationClient<{ id: string; status: string; createdAt: Date; twitterHandle: string | null; discordHandle: string | null; telegramHandle: string | null; userId: string; reviewedAt: Date | null; pitch: string | null; reviewedById: string | null; }, never, DefaultArgs>)[]' is not assignable to parameter of type '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>'.
+      Type '(Promise<void> | Prisma__ReferralApplicationClient<{ id: string; status: string; createdAt: Date; twitterHandle: string | null; discordHandle: string | null; telegramHandle: string | null; userId: string; reviewedAt: Date | null; pitch: string | null; reviewedById: string | null; }, never, DefaultArgs>)[]' provides no match for the signature '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">): Promise<...>'.
+src/app/api/admin/referrals/reject/route.ts(24,16): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(arg: PrismaPromise<any>[], options?: { isolationLevel?: "Serializable" | undefined; } | undefined): Promise<any[]>', gave the following error.
+    Type 'Promise<void>' is not assignable to type 'PrismaPromise<any>'.
+      Types of property '[Symbol.toStringTag]' are incompatible.
+        Type 'string' is not assignable to type '"PrismaPromise"'.
+  Overload 2 of 2, '(fn: (prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>, options?: { ...; } | undefined): Promise<...>', gave the following error.
+    Argument of type '(Promise<void> | Prisma__ReferralApplicationClient<{ id: string; status: string; createdAt: Date; twitterHandle: string | null; discordHandle: string | null; telegramHandle: string | null; userId: string; reviewedAt: Date | null; pitch: string | null; reviewedById: string | null; }, never, DefaultArgs>)[]' is not assignable to parameter of type '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>'.
+      Type '(Promise<void> | Prisma__ReferralApplicationClient<{ id: string; status: string; createdAt: Date; twitterHandle: string | null; discordHandle: string | null; telegramHandle: string | null; userId: string; reviewedAt: Date | null; pitch: string | null; reviewedById: string | null; }, never, DefaultArgs>)[]' provides no match for the signature '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">): Promise<...>'.
+src/app/api/auth/complete-profile/route.ts(57,7): error TS2322: Type '{ name: string | null; id: string; flaggedAt: Date | null; createdAt: Date; updatedAt: Date; email: string | null; walletAddress: string | null; referralCode: string; ... 42 more ...; oauth_picture: string | null; } | { ...; } | null' is not assignable to type '{ user: { id: string; email: string | null; username: string | null; referralCode: string; balance: number; }; } | { id: string; email: string | null; username: string | null; referralCode: string; balance: number; } | { ...; }'.
+  Type 'null' is not assignable to type '{ user: { id: string; email: string | null; username: string | null; referralCode: string; balance: number; }; } | { id: string; email: string | null; username: string | null; referralCode: string; balance: number; } | { ...; }'.
+src/app/api/auth/complete-profile/route.ts(105,20): error TS18047: 'result' is possibly 'null'.
+src/app/api/deposit/card/route.ts(46,34): error TS2307: Cannot find module 'stripe' or its corresponding type declarations.
+src/app/api/governance/proposals/route.ts(38,19): error TS2559: Type 'SessionUser' has no properties in common with type '{ reputationScore?: number | null | undefined; }'.
+src/app/api/marketplace/alerts/route.ts(36,52): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/app/api/marketplace/assets/[id]/bids/route.ts(3,10): error TS2305: Module '"@/lib/marketplace"' has no exported member 'createBid'.
+src/app/api/marketplace/assets/[id]/buy/route.ts(3,10): error TS2305: Module '"@/lib/marketplace"' has no exported member 'executeMarketBuy'.
+src/app/api/marketplace/assets/[id]/listings/route.ts(3,10): error TS2305: Module '"@/lib/marketplace"' has no exported member 'createListing'.
+src/app/api/marketplace/assets/[id]/order-book/route.ts(2,10): error TS2459: Module '"@/lib/marketplace"' declares 'getOrderBook' locally, but it is not exported.
+src/app/api/marketplace/assets/[id]/price-history/route.ts(2,10): error TS2305: Module '"@/lib/marketplace"' has no exported member 'getAssetPriceHistory'.
+src/app/api/marketplace/assets/[id]/sell/route.ts(3,10): error TS2305: Module '"@/lib/marketplace"' has no exported member 'executeMarketSell'.
+src/app/api/marketplace/assets/[id]/share/route.ts(31,9): error TS2353: Object literal may only specify known properties, and 'listingId' does not exist in type 'Without<AssetShareCreateInput, AssetShareUncheckedCreateInput> & AssetShareUncheckedCreateInput'.
+src/app/api/marketplace/bids/[bidId]/cancel/route.ts(3,10): error TS2305: Module '"@/lib/marketplace"' has no exported member 'cancelBid'.
+src/app/api/marketplace/leaderboard/route.ts(17,28): error TS2802: Type 'MapIterator<[string, number]>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/app/api/referral/apply/route.ts(56,16): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(arg: PrismaPromise<any>[], options?: { isolationLevel?: "Serializable" | undefined; } | undefined): Promise<any[]>', gave the following error.
+    Type 'Promise<void>' is not assignable to type 'PrismaPromise<any>'.
+      Types of property '[Symbol.toStringTag]' are incompatible.
+        Type 'string' is not assignable to type '"PrismaPromise"'.
+  Overload 2 of 2, '(fn: (prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>, options?: { ...; } | undefined): Promise<...>', gave the following error.
+    Argument of type '(Promise<void> | Prisma__ReferralApplicationClient<{ id: string; status: string; createdAt: Date; twitterHandle: string | null; discordHandle: string | null; telegramHandle: string | null; userId: string; reviewedAt: Date | null; pitch: string | null; reviewedById: string | null; }, never, DefaultArgs>)[]' is not assignable to parameter of type '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>'.
+      Type '(Promise<void> | Prisma__ReferralApplicationClient<{ id: string; status: string; createdAt: Date; twitterHandle: string | null; discordHandle: string | null; telegramHandle: string | null; userId: string; reviewedAt: Date | null; pitch: string | null; reviewedById: string | null; }, never, DefaultArgs>)[]' provides no match for the signature '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">): Promise<...>'.
+src/app/api/webhooks/stripe/route.ts(2,20): error TS2307: Cannot find module 'stripe' or its corresponding type declarations.
+src/app/discover/DiscoverContent.tsx(190,13): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+    Types of property 'propTypes' are incompatible.
+      Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }> | undefined'.
+        Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+          Types of property 'strokeWidth' are incompatible.
+            Type 'Validator<string | number | null | undefined> | undefined' is not assignable to type 'Validator<number | null | undefined> | undefined'.
+              Type 'Validator<string | number | null | undefined>' is not assignable to type 'Validator<number | null | undefined>'.
+                Type 'string | number | null | undefined' is not assignable to type 'number | null | undefined'.
+                  Type 'string' is not assignable to type 'number'.
+src/app/discover/DiscoverContent.tsx(196,13): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+    Types of property 'propTypes' are incompatible.
+      Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }> | undefined'.
+        Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+          Types of property 'strokeWidth' are incompatible.
+            Type 'Validator<string | number | null | undefined> | undefined' is not assignable to type 'Validator<number | null | undefined> | undefined'.
+              Type 'Validator<string | number | null | undefined>' is not assignable to type 'Validator<number | null | undefined>'.
+                Type 'string | number | null | undefined' is not assignable to type 'number | null | undefined'.
+                  Type 'string' is not assignable to type 'number'.
+src/app/discover/DiscoverContent.tsx(202,13): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+    Types of property 'propTypes' are incompatible.
+      Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }> | undefined'.
+        Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+          Types of property 'strokeWidth' are incompatible.
+            Type 'Validator<string | number | null | undefined> | undefined' is not assignable to type 'Validator<number | null | undefined> | undefined'.
+              Type 'Validator<string | number | null | undefined>' is not assignable to type 'Validator<number | null | undefined>'.
+                Type 'string | number | null | undefined' is not assignable to type 'number | null | undefined'.
+                  Type 'string' is not assignable to type 'number'.
+src/app/discover/DiscoverContent.tsx(208,13): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+    Types of property 'propTypes' are incompatible.
+      Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }> | undefined'.
+        Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+          Types of property 'strokeWidth' are incompatible.
+            Type 'Validator<string | number | null | undefined> | undefined' is not assignable to type 'Validator<number | null | undefined> | undefined'.
+              Type 'Validator<string | number | null | undefined>' is not assignable to type 'Validator<number | null | undefined>'.
+                Type 'string | number | null | undefined' is not assignable to type 'number | null | undefined'.
+                  Type 'string' is not assignable to type 'number'.
+src/app/discover/DiscoverContent.tsx(214,13): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+    Types of property 'propTypes' are incompatible.
+      Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }> | undefined'.
+        Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+          Types of property 'strokeWidth' are incompatible.
+            Type 'Validator<string | number | null | undefined> | undefined' is not assignable to type 'Validator<number | null | undefined> | undefined'.
+              Type 'Validator<string | number | null | undefined>' is not assignable to type 'Validator<number | null | undefined>'.
+                Type 'string | number | null | undefined' is not assignable to type 'number | null | undefined'.
+                  Type 'string' is not assignable to type 'number'.
+src/app/discover/DiscoverContent.tsx(220,13): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+    Types of property 'propTypes' are incompatible.
+      Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }> | undefined'.
+        Type 'WeakValidationMap<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'WeakValidationMap<{ className?: string | undefined; strokeWidth?: number | undefined; }>'.
+          Types of property 'strokeWidth' are incompatible.
+            Type 'Validator<string | number | null | undefined> | undefined' is not assignable to type 'Validator<number | null | undefined> | undefined'.
+              Type 'Validator<string | number | null | undefined>' is not assignable to type 'Validator<number | null | undefined>'.
+                Type 'string | number | null | undefined' is not assignable to type 'number | null | undefined'.
+                  Type 'string' is not assignable to type 'number'.
+src/app/governance/proposals/ProposalsView.tsx(197,39): error TS2322: Type '"li"' is not assignable to type '"section" | "div" | "article" | undefined'.
+src/app/governance/proposals/ProposalsView.tsx(213,21): error TS2322: Type '{ children: string; size: string; variant: "primary"; onClick: () => Promise<void>; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+src/app/HomeContent.tsx(80,3): error TS2339: Property 'narrativesRising' does not exist on type 'Props'.
+src/app/HomeContent.tsx(81,3): error TS2339: Property 'narrativesFalling' does not exist on type 'Props'.
+src/app/HomeContent.tsx(82,3): error TS2339: Property 'mostTradedNarratives' does not exist on type 'Props'.
+src/app/HomeContent.tsx(88,27): error TS2304: Cannot find name 'CategoryTrending'.
+src/app/HomeContent.tsx(175,63): error TS2532: Object is possibly 'undefined'.
+src/app/HomeContent.tsx(176,24): error TS2532: Object is possibly 'undefined'.
+src/app/HomeContent.tsx(202,50): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/HomeContent.tsx(225,51): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/HomeContent.tsx(248,54): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/HomeContent.tsx(294,41): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/app/market/[canonical]/MarketView.tsx(734,72): error TS2322: Type '{ children: string; type: "submit"; disabled: boolean; size: string; }' is not assignable to type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+src/app/marketplace/create/CreateAssetForm.tsx(63,18): error TS2322: Type '"form"' is not assignable to type '"section" | "div" | "article" | undefined'.
+src/app/page.tsx(88,7): error TS2322: Type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }[]' is not assignable to type 'Market[]'.
+  Type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }' is not assignable to type 'Market'.
+    Types of property 'tags' are incompatible.
+      Type 'string' is not assignable to type 'string[]'.
+src/app/page.tsx(89,7): error TS2322: Type '{ change: number; priceHistory: { id: string; price: number; marketId: string; timestamp: Date; }[]; id: string; canonical: string; displayName: string; title: string | null; description: string | null; ... 36 more ...; isCoreMarket: boolean; }[]' is not assignable to type 'Market[]'.
+  Type '{ change: number; priceHistory: { id: string; price: number; marketId: string; timestamp: Date; }[]; id: string; canonical: string; displayName: string; title: string | null; description: string | null; ... 36 more ...; isCoreMarket: boolean; }' is not assignable to type 'Market'.
+    Types of property 'tags' are incompatible.
+      Type 'string' is not assignable to type 'string[]'.
+src/components/auth/AuthModalViews.tsx(185,3): error TS2339: Property 'onSwitchToLogin' does not exist on type 'SignUpViewProps'.
+src/components/AuthModal.tsx(346,9): error TS2322: Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'LegacyRef<HTMLDivElement> | undefined'.
+  Type 'RefObject<HTMLDivElement | null>' is not assignable to type 'RefObject<HTMLDivElement>'.
+    Type 'HTMLDivElement | null' is not assignable to type 'HTMLDivElement'.
+      Type 'null' is not assignable to type 'HTMLDivElement'.
+src/components/AuthModal.tsx(385,17): error TS2322: Type '{ form: SignUpFormData; setForm: Dispatch<SetStateAction<SignUpFormData>>; onSubmit: (e: FormEvent<Element>) => Promise<...>; ... 5 more ...; onSwitchToLogin: () => void; }' is not assignable to type 'IntrinsicAttributes & SignUpViewProps'.
+  Property 'onSwitchToLogin' does not exist on type 'IntrinsicAttributes & SignUpViewProps'.
+src/components/marketplace/FollowCreatorButton.tsx(52,9): error TS2322: Type '{ children: (string | Element)[]; variant: "ghost"; size: string; onClick: (e: MouseEvent<Element, MouseEvent>) => Promise<void>; disabled: boolean; className: string; }' is not assignable to type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+  Property 'size' does not exist on type 'IntrinsicAttributes & ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" | undefined; href?: string | undefined; className?: string | undefined; }'.
+src/lib/category-discovery.ts(14,17): error TS2352: Conversion of type '{ tradeCount: { gt: number; }; volume: { gte: number; }; OR: readonly [{ readonly isCoreMarket: true; }, { readonly volume: { readonly gte: 100; }; }]; }' to type '{ tradeCount: { gt: number; }; volume: { gte: number; }; categoryId?: string | null | undefined; OR: unknown[]; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'OR' are incompatible.
+    The type 'readonly [{ readonly isCoreMarket: true; }, { readonly volume: { readonly gte: 100; }; }]' is 'readonly' and cannot be assigned to the mutable type 'unknown[]'.
+src/lib/category-discovery.ts(27,5): error TS2322: Type '{ tradeCount: { gt: number; }; volume: { gte: number; }; categoryId?: string | null | undefined; OR: unknown[]; }' is not assignable to type 'MarketWhereInput'.
+  Types of property 'OR' are incompatible.
+    Type 'unknown[]' is not assignable to type 'MarketWhereInput[]'.
+      Type 'unknown' is not assignable to type 'MarketWhereInput'.
+src/lib/category-discovery.ts(43,30): error TS2339: Property 'trades' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/category-discovery.ts(44,49): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/lib/category-discovery.ts(44,52): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/lib/category-discovery.ts(45,55): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/lib/category-discovery.ts(47,18): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/lib/category-discovery.ts(48,18): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/lib/category-discovery.ts(48,21): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/lib/category-discovery.ts(49,24): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/category-discovery.ts(90,5): error TS2322: Type '{ categoryId?: string | null | undefined; AND: unknown[]; }' is not assignable to type 'MarketWhereInput'.
+  Types of property 'AND' are incompatible.
+    Type 'unknown[]' is not assignable to type 'MarketWhereInput | MarketWhereInput[] | undefined'.
+      Type 'unknown[]' is not assignable to type 'MarketWhereInput[]'.
+        Type 'unknown' is not assignable to type 'MarketWhereInput'.
+src/lib/category-discovery.ts(105,5): error TS2322: Type '{ tradeCount: { gt: number; }; volume: { gte: number; }; categoryId?: string | null | undefined; OR: unknown[]; }' is not assignable to type 'MarketWhereInput'.
+  Types of property 'OR' are incompatible.
+    Type 'unknown[]' is not assignable to type 'MarketWhereInput[]'.
+      Type 'unknown' is not assignable to type 'MarketWhereInput'.
+src/lib/category-discovery.ts(113,22): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/category-discovery.ts(113,51): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/category-discovery.ts(115,26): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/category-discovery.ts(125,5): error TS2322: Type '{ tradeCount: { gt: number; }; volume: { gte: number; }; categoryId?: string | null | undefined; OR: unknown[]; }' is not assignable to type 'MarketWhereInput'.
+  Types of property 'OR' are incompatible.
+    Type 'unknown[]' is not assignable to type 'MarketWhereInput[]'.
+      Type 'unknown' is not assignable to type 'MarketWhereInput'.
+src/lib/competition.ts(93,28): error TS2802: Type 'MapIterator<{ userId: string; at: Date; }>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/competition.ts(98,8): error TS2802: Type 'MapIterator<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/competition.ts(99,8): error TS2802: Type 'MapIterator<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/competition.ts(100,8): error TS2802: Type 'MapIterator<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/competition.ts(240,31): error TS2802: Type 'MapIterator<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/competition.ts(240,56): error TS2802: Type 'MapIterator<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/competition.ts(240,84): error TS2802: Type 'MapIterator<string>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/competition.ts(242,24): error TS2802: Type 'Set<any>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+src/lib/discovery-feed.ts(28,5): error TS2322: Type '{ status: string; tradeCount: { gt: number; }; volume: { gte: number; }; OR: readonly [{ readonly isCoreMarket: true; }, { readonly volume: { readonly gte: 100; }; }]; }' is not assignable to type 'MarketWhereInput'.
+  Types of property 'OR' are incompatible.
+    The type 'readonly [{ readonly isCoreMarket: true; }, { readonly volume: { readonly gte: 100; }; }]' is 'readonly' and cannot be assigned to the mutable type 'MarketWhereInput[]'.
+src/lib/discovery-feed.ts(50,25): error TS2339: Property 'trades' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(51,26): error TS2339: Property 'trades' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(54,37): error TS2339: Property 'trades' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(56,9): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(56,39): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(57,25): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(57,52): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(59,37): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(59,67): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(60,22): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(60,49): error TS2339: Property 'priceHistory' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/discovery-feed.ts(70,7): error TS2339: Property 'comments' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/governance.ts(126,24): error TS2353: Object literal may only specify known properties, and 'message' does not exist in type '{ ok: boolean; error?: string | undefined; market?: { id: string; canonical: string; } | undefined; }'.
+src/lib/market-activity-simulation.ts(52,30): error TS2353: Object literal may only specify known properties, and 'or' does not exist in type 'Date | DateTimeNullableFilter<"Market">'.
+src/lib/market-activity-simulation.ts(78,35): error TS2339: Property 'positions' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'.
+src/lib/marketplace-demand.ts(55,12): error TS2339: Property 'assetBid' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/marketplace-demand.ts(78,41): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/lib/marketplace-demand.ts(82,39): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/lib/marketplace-demand.ts(82,42): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/lib/marketplace-demand.ts(84,47): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/lib/marketplace-demand.ts(112,29): error TS2339: Property 'assetBid' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/markets.ts(7,3): error TS2305: Module '"./amm"' has no exported member 'getPriceFromSupply'.
+src/lib/markets.ts(8,3): error TS2305: Module '"./amm"' has no exported member 'costToBuy'.
+src/lib/markets.ts(9,3): error TS2305: Module '"./amm"' has no exported member 'proceedsFromSell'.
+src/lib/markets.ts(10,3): error TS2305: Module '"./amm"' has no exported member 'sharesForBuyAmount'.
+src/lib/markets.ts(11,3): error TS2305: Module '"./amm"' has no exported member 'getInitialPrice'.
+src/lib/markets.ts(484,65): error TS2345: Argument of type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">' is not assignable to parameter of type '{ user: { update: (args: unknown) => Promise<unknown>; }; }'.
+  The types of 'user.update' are incompatible between these types.
+    Type '<T extends UserUpdateArgs>(args: SelectSubset<T, UserUpdateArgs<DefaultArgs>>) => Prisma__UserClient<GetFindResult<$UserPayload<DefaultArgs>, T, {}>, never, DefaultArgs>' is not assignable to type '(args: unknown) => Promise<unknown>'.
+      Types of parameters 'args' and 'args' are incompatible.
+        Type 'unknown' is not assignable to type '{ select?: UserSelect<DefaultArgs> | null | undefined; include?: UserInclude<DefaultArgs> | null | undefined; data: (Without<UserUpdateInput, UserUncheckedUpdateInput> & UserUncheckedUpdateInput) | (Without<...> & UserUpdateInput); where: UserWhereUniqueInput; }'.
+src/lib/markets.ts(753,65): error TS2345: Argument of type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">' is not assignable to parameter of type '{ user: { update: (args: unknown) => Promise<unknown>; }; }'.
+  The types of 'user.update' are incompatible between these types.
+    Type '<T extends UserUpdateArgs>(args: SelectSubset<T, UserUpdateArgs<DefaultArgs>>) => Prisma__UserClient<GetFindResult<$UserPayload<DefaultArgs>, T, {}>, never, DefaultArgs>' is not assignable to type '(args: unknown) => Promise<unknown>'.
+      Types of parameters 'args' and 'args' are incompatible.
+        Type 'unknown' is not assignable to type '{ select?: UserSelect<DefaultArgs> | null | undefined; include?: UserInclude<DefaultArgs> | null | undefined; data: (Without<UserUpdateInput, UserUncheckedUpdateInput> & UserUncheckedUpdateInput) | (Without<...> & UserUpdateInput); where: UserWhereUniqueInput; }'.
+src/lib/narrative-discovery.ts(72,5): error TS2322: Type '{ status: string; tradeCount: { gt: number; }; volume: { gte: number; }; OR: readonly [{ readonly isCoreMarket: true; }, { readonly volume: { readonly gte: 100; }; }]; }' is not assignable to type 'MarketWhereInput'.
+  Types of property 'OR' are incompatible.
+    The type 'readonly [{ readonly isCoreMarket: true; }, { readonly volume: { readonly gte: 100; }; }]' is 'readonly' and cannot be assigned to the mutable type 'MarketWhereInput[]'.
+src/lib/narrative-discovery.ts(122,19): error TS2551: Property 'category' does not exist on type '{ id: string; canonical: string; displayName: string; title: string | null; description: string | null; tags: string; price: number; volume: number; volume24h: number; priceChange24h: number; ... 31 more ...; isCoreMarket: boolean; }'. Did you mean 'categoryId'?
+src/lib/referral-abuse.ts(44,11): error TS7022: 'u' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.

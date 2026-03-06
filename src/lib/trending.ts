@@ -2,6 +2,7 @@ import { prisma } from "./db";
 import { getMarketHealthScore } from "./markets";
 import { MIN_INITIAL_BUY_TO_ACTIVATE, MIN_HEALTH_SCORE_FOR_TRENDING } from "./constants";
 import { getCached } from "./cache";
+import { computeNarrativeGravityScore } from "./narrative-discovery";
 
 const TRENDING_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
 const VELOCITY_WINDOW_MS = 60 * 60 * 1000; // 1h for trade velocity
@@ -54,13 +55,28 @@ export async function getTrendingMarkets(limit = 10) {
         lastTradeAt: m.lastTradeAt,
       });
       if (healthScore < MIN_HEALTH_SCORE_FOR_TRENDING) return null;
+      const momentum = (m as { momentumScore?: number }).momentumScore ?? 0;
+      const attentionVel = (m as { attentionVelocity?: number }).attentionVelocity ?? 0;
+      const volume24h = recentVolume;
+      const priceChange24hDecimal = prices.length >= 2 && prices[0].price > 0
+        ? (prices[1].price - prices[0].price) / prices[0].price
+        : 0;
+      const narrativeGravity = computeNarrativeGravityScore(
+        volume24h,
+        uniqueTraders,
+        attentionVel,
+        priceChange24hDecimal
+      );
       const score =
+        narrativeGravity * 10 +
         Math.log(1 + recentVolume) * 2.5 +
         uniqueTraders * 4 +
         Math.log(1 + recentVelocity) * 1.5 +
         Math.abs(priceChange) * 0.5 +
         m.tradeCount * 0.3 +
-        Math.min(marketAgeHours / 24, 2) * 0.5;
+        Math.min(marketAgeHours / 24, 2) * 0.5 +
+        momentum * 0.4 +
+        Math.max(0, attentionVel) * 8;
       return {
         ...m,
         score,

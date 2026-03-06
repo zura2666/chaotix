@@ -76,6 +76,18 @@ Discovery feed (no auth).
 
 ---
 
+### GET /api/discovery/narratives
+
+Narrative discovery engine: rank narratives by GravityScore (volume24h, uniqueTraders24h, priceMomentum, attentionVelocity). No auth.
+
+| Query             | Type   | Description        |
+|-------------------|--------|--------------------|
+| `limitPerSection` | number | Default 10, max 25 |
+
+**Response:** `{ exploding, rising, falling, mostTraded, newNarratives, mostControversial }` — each an array of narrative items. Each item includes: `canonical`, `narrativeStrength`, `momentumScore`, `gravityScore`, `uniqueTraders24h`, `volume24h`, plus `id`, `displayName`, `title`, `price`, `volume`, `tradeCount`, `priceChange24h`, `attentionVelocity`, `createdAt`, `category`, `tags`.
+
+---
+
 ### GET /api/public/markets
 
 List active markets.
@@ -307,6 +319,8 @@ Health check.
 
 - **GET /api/cron/archive-markets** – Archive inactive markets. Header: `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret`.
 - **GET /api/cron/liquidity-rewards** – Distribute LP rewards. Same auth.
+- **GET /api/cron/market-activity-simulation** – Market activity seeding: small system trades for markets with `minDailyTrades` > 0. Runs every 5 minutes (e.g. via Vercel Cron). Same auth.
+- **GET /api/cron/competition-ranks** – Refresh user competition ranks (roiRank, volumeRank, narrativeRank, seasonScore, rankTitle) for near real-time leaderboards. Runs every 5 minutes. Same auth.
 
 `CRON_SECRET` must be set and at least 16 characters.
 

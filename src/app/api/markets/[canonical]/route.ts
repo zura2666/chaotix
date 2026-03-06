@@ -50,5 +50,6 @@ export async function GET(
   if (!result.market) {
     return NextResponse.json({ error: "Market not found" }, { status: 404 });
   }
+  // Response includes derived metrics: attentionVelocity, momentumScore, uniqueTraders24h (Market model)
   return NextResponse.json({ market: result.market });
 }

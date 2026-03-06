@@ -1,46 +1,31 @@
 /**
- * Market gravity: when a market crosses threshold, push it everywhere (homepage, discovery, highlight).
+ * Market gravity: narrative-based GravityScore (volume24h, uniqueTraders24h, priceMomentum, attentionVelocity).
+ * When a market crosses threshold, push it everywhere (homepage, discovery, highlight).
  */
 
 import { prisma } from "./db";
 import { GRAVITY_THRESHOLD } from "./constants";
-import { getMarketHealthScore } from "./markets";
-import { getMarketAttention } from "./attention";
+import { computeNarrativeGravityScore } from "./narrative-discovery";
 
 export async function updateMarketGravityScore(marketId: string): Promise<number> {
   const market = await prisma.market.findUnique({
     where: { id: marketId },
     select: {
-      volume: true,
       tradeCount: true,
-      momentumScore: true,
-      lastTradeAt: true,
-      reserveTokens: true,
+      volume24h: true,
+      uniqueTraders24h: true,
+      priceChange24h: true,
+      attentionVelocity: true,
     },
   });
   if (!market || market.tradeCount === 0) return 0;
 
-  const health = getMarketHealthScore({
-    volume: market.volume,
-    tradeCount: market.tradeCount,
-    lastTradeAt: market.lastTradeAt,
-  });
-  const attention = await getMarketAttention(marketId);
-  const uniqueTraders = await prisma.trade.groupBy({
-    by: ["marketId"],
-    where: { marketId },
-    _count: { userId: true },
-  });
-  const traders = uniqueTraders[0]?._count.userId ?? 0;
-
-  const score =
-    Math.log(1 + market.volume) * 1.5 +
-    market.tradeCount * 0.3 +
-    (market.momentumScore ?? 0) * 0.5 +
-    health * 2 +
-    Math.log(1 + attention.attentionScore) +
-    traders * 0.2;
-
+  const score = computeNarrativeGravityScore(
+    market.volume24h ?? 0,
+    market.uniqueTraders24h ?? 0,
+    market.priceChange24h ?? 0,
+    market.attentionVelocity ?? 0
+  );
   const rounded = Math.round(score * 100) / 100;
   await prisma.market.update({
     where: { id: marketId },

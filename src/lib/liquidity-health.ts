@@ -4,7 +4,7 @@
 
 import { buyQuote, sellQuote, getPriceFromReserves } from "./pool-amm";
 
-export type LiquidityStatus = "healthy" | "thin" | "risky";
+export type LiquidityStatus = "healthy" | "thin" | "critical";
 
 export type LiquidityHealth = {
   status: LiquidityStatus;
@@ -65,7 +65,7 @@ export function computeLiquidityHealth(
   let message = "Liquidity is sufficient for normal trading.";
 
   if (liquidityDepth < 100 || slippage10 > 15) {
-    status = "risky";
+    status = "critical";
     message = "Low liquidity. Large trades may have significant slippage.";
   } else if (liquidityDepth < 500 || slippage10 > 8) {
     status = "thin";

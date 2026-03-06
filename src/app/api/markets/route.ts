@@ -6,7 +6,8 @@ import { validateIdentifierSafe, validateDisplayNameSafe } from "@/lib/identifie
 import { validateTags } from "@/lib/tags";
 import { rateLimit429 } from "@/lib/rate-limit";
 import { prisma } from "@/lib/db";
-import { MIN_INITIAL_BUY_TO_ACTIVATE } from "@/lib/constants";
+import { MIN_INITIAL_BUY_TO_ACTIVATE, CURATED_NARRATIVE_MODE } from "@/lib/constants";
+import { resolveCanonicalOrNormalize, canCreateDirect } from "@/lib/governance";
 import { z } from "zod";
 
 function parseTagsJson(tagsJson: string): string[] {
@@ -51,11 +52,46 @@ export async function POST(req: NextRequest) {
   }
   const { canonical: rawCanonical, title, description, categoryId, tags } = parsed.data;
 
-  const canonicalResult = validateIdentifierSafe(rawCanonical.trim());
-  if (!canonicalResult.ok) {
-    return NextResponse.json({ error: canonicalResult.error }, { status: 400 });
+  const resolved = await resolveCanonicalOrNormalize(rawCanonical.trim());
+  if (resolved.error) {
+    return NextResponse.json({ error: resolved.error }, { status: 400 });
   }
-  const canonical = canonicalResult.value;
+  const canonical = resolved.canonical;
+
+  const existing = await getMarketByCanonical(canonical);
+  if (existing) {
+    return NextResponse.json(
+      { error: "This narrative already exists.", canonical: existing.canonical, useProposal: true },
+      { status: 409 }
+    );
+  }
+
+  if (CURATED_NARRATIVE_MODE) {
+    const adminUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    });
+    if (!adminUser?.isAdmin) {
+      return NextResponse.json(
+        { error: "Only admins can create markets. The platform uses a curated set of narrative markets." },
+        { status: 403 }
+      );
+    }
+  } else {
+    const userForGov = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { reputationScore: true },
+    });
+    if (!canCreateDirect(userForGov ?? {})) {
+      return NextResponse.json(
+        {
+          error: "Minimum reputation required to create markets directly. Propose a market instead and get community upvotes.",
+          useProposal: true,
+        },
+        { status: 403 }
+      );
+    }
+  }
 
   if (categoryId) {
     const cat = await prisma.category.findUnique({ where: { id: categoryId } });
@@ -69,14 +105,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: tagsResult.error }, { status: 400 });
   }
   const validatedTags = tagsResult.value;
-
-  const existing = await getMarketByCanonical(canonical);
-  if (existing) {
-    return NextResponse.json(
-      { error: "A market with this canonical string already exists.", canonical: existing.canonical },
-      { status: 409 }
-    );
-  }
 
   let displayTitle: string | undefined;
   if (title !== undefined && title.trim()) {
@@ -93,6 +121,7 @@ export async function POST(req: NextRequest) {
     description: displayDescription,
     categoryId: categoryId ?? undefined,
     tags: validatedTags,
+    isCoreMarket: CURATED_NARRATIVE_MODE, // admin-created in curated mode = core
   });
 
   if ("error" in result && result.error) {

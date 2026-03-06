@@ -4,7 +4,7 @@
 
 import { prisma } from "./db";
 import { EARLY_TRADER_LIMIT, EARLY_TRADER_FEE_DISCOUNT_BPS, TRADING_FEE_BPS } from "./constants";
-import { awardBadge } from "./reputation";
+import { awardBadge, updateReputationEarlyDiscovery } from "./reputation";
 
 /**
  * Record early trader and return their rank (1 = first). If already recorded, returns existing rank.
@@ -23,6 +23,7 @@ export async function recordEarlyTrader(marketId: string, userId: string): Promi
   await prisma.marketEarlyTrader.create({
     data: { marketId, userId, rank },
   });
+  updateReputationEarlyDiscovery(userId).catch(() => {});
   if (rank <= 10) awardBadge(userId, "early_discoverer").catch(() => {});
   return rank;
 }

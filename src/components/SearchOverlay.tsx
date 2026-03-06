@@ -153,13 +153,15 @@ export function SearchOverlay({
           {!loading && noResults && (
             <div className="space-y-3 py-4 overscroll-contain">
               <p className="text-sm text-slate-500">Market not found.</p>
-              <button
-                type="button"
-                onClick={handleCreateMarketClick}
-                className="h-14 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-base font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20 min-h-[44px]"
-              >
-                {normalize(q).length >= 3 ? `Create "${q.trim().slice(0, 24)}${q.trim().length > 24 ? "…" : ""}" Market` : "Create Market"}
-              </button>
+              {user?.isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleCreateMarketClick}
+                  className="h-14 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-base font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20 min-h-[44px]"
+                >
+                  {normalize(q).length >= 3 ? `Create "${q.trim().slice(0, 24)}${q.trim().length > 24 ? "…" : ""}" Market` : "Create Market"}
+                </button>
+              )}
             </div>
           )}
           {!loading && (markets.length > 0 || categories.length > 0 || tags.length > 0) && (

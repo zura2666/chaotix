@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Zap } from "lucide-react";
+import { Search, Zap, TrendingUp, TrendingDown, Sparkles, MessageCircle } from "lucide-react";
 import { MarketCard } from "@/components/MarketCard";
 import { EmptyState } from "@/components/EmptyState";
 import { ChaotixCard } from "@/components/ui/ChaotixCard";
@@ -10,9 +10,33 @@ import { Input } from "@/components/ui/Input";
 
 type FeedItem = Record<string, unknown>;
 
+type NarrativeSectionMarket = {
+  id: string;
+  canonical: string;
+  displayName: string;
+  price: number;
+  volume: number;
+  tradeCount: number;
+  priceChange24h: number;
+  uniqueTraders24h: number;
+  gravityScore: number;
+  category?: { slug: string; name: string } | null;
+  tags?: string;
+};
+
+type NarrativeSections = {
+  narrativesExploding: NarrativeSectionMarket[];
+  narrativesRising: NarrativeSectionMarket[];
+  narrativesFalling: NarrativeSectionMarket[];
+  mostTradedNarratives: NarrativeSectionMarket[];
+  newNarratives: NarrativeSectionMarket[];
+  mostControversial: NarrativeSectionMarket[];
+};
+
 type Props = {
   feed: FeedItem[];
   initialTag?: string;
+  narrativeSections?: NarrativeSections | null;
 };
 
 function toMarket(m: FeedItem) {
@@ -29,9 +53,51 @@ function toMarket(m: FeedItem) {
   };
 }
 
+function narrativeToMarket(m: NarrativeSectionMarket) {
+  return {
+    id: m.id,
+    canonical: m.canonical,
+    displayName: m.displayName,
+    price: m.price,
+    volume: m.volume,
+    tradeCount: m.tradeCount,
+    priceChange: m.priceChange24h != null ? m.priceChange24h * 100 : undefined,
+    uniqueTraders24h: m.uniqueTraders24h,
+    category: m.category ?? undefined,
+    tags: typeof m.tags === "string" ? (() => { try { const t = JSON.parse(m.tags!); return Array.isArray(t) ? t : []; } catch { return []; } })() : undefined,
+  };
+}
+
+function NarrativeSection({
+  title,
+  icon: Icon,
+  markets,
+  emptyLabel,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  markets: NarrativeSectionMarket[];
+  emptyLabel: string;
+}) {
+  if (markets.length === 0) return null;
+  return (
+    <section>
+      <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-200">
+        <Icon className="h-5 w-5 text-emerald-400" strokeWidth={1.5} />
+        {title}
+      </h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+        {markets.map((m) => (
+          <MarketCard key={m.id} market={narrativeToMarket(m)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 type SortKey = "score" | "newest" | "volume" | "priceChange";
 
-export function DiscoverContent({ feed, initialTag }: Props) {
+export function DiscoverContent({ feed, initialTag, narrativeSections }: Props) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("score");
 
@@ -110,14 +176,56 @@ export function DiscoverContent({ feed, initialTag }: Props) {
             >
               <option value="score">Discovery score</option>
               <option value="volume">Volume</option>
-              <option value="priceChange">Price change</option>
+              <option value="priceChange">24h change</option>
               <option value="newest">Newest</option>
             </select>
           </div>
         </div>
       </ChaotixCard>
 
+      {narrativeSections && !initialTag && (
+        <div className="space-y-10">
+          <NarrativeSection
+            title="Exploding Narratives"
+            icon={TrendingUp}
+            markets={narrativeSections.narrativesExploding}
+            emptyLabel="No exploding narratives"
+          />
+          <NarrativeSection
+            title="Rising Narratives"
+            icon={Zap}
+            markets={narrativeSections.narrativesRising}
+            emptyLabel="No rising narratives"
+          />
+          <NarrativeSection
+            title="Falling Narratives"
+            icon={TrendingDown}
+            markets={narrativeSections.narrativesFalling}
+            emptyLabel="No falling narratives"
+          />
+          <NarrativeSection
+            title="Most Traded Narratives"
+            icon={TrendingUp}
+            markets={narrativeSections.mostTradedNarratives}
+            emptyLabel="No traded narratives"
+          />
+          <NarrativeSection
+            title="New Narratives"
+            icon={Sparkles}
+            markets={narrativeSections.newNarratives}
+            emptyLabel="No new narratives"
+          />
+          <NarrativeSection
+            title="Most Controversial"
+            icon={MessageCircle}
+            markets={narrativeSections.mostControversial}
+            emptyLabel="No controversial narratives"
+          />
+        </div>
+      )}
+
       <section>
+        <h2 className="mb-4 text-base font-semibold text-slate-200">All markets</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
           {markets.length === 0 ? (
             <EmptyState

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ChaotixCard } from "@/components/ui/ChaotixCard";
 import { ChaotixButton } from "@/components/ui/ChaotixButton";
 import { Input } from "@/components/ui/Input";
@@ -31,6 +32,7 @@ export function CreateMarketForm({ initialString }: { initialString: string }) {
   const [tagsStr, setTagsStr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useProposal, setUseProposal] = useState(false);
 
   const canonical = rawString.trim() ? normalize(rawString) : "";
 
@@ -77,6 +79,7 @@ export function CreateMarketForm({ initialString }: { initialString: string }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        setUseProposal(!!data.useProposal);
         setError(data.error ?? "Failed to create market.");
         return;
       }
@@ -200,9 +203,19 @@ export function CreateMarketForm({ initialString }: { initialString: string }) {
           )}
         </div>
         {error && (
-          <p className="text-sm text-red-400" role="alert">
-            {error}
-          </p>
+          <div className="space-y-1">
+            <p className="text-sm text-red-400" role="alert">
+              {error}
+            </p>
+            {useProposal && (
+              <p className="text-sm text-slate-400">
+                <Link href="/governance/proposals" className="underline text-amber-400 hover:text-amber-300">
+                  Propose a market
+                </Link>
+                {" "}for community upvotes, or upvote existing proposals.
+              </p>
+            )}
+          </div>
         )}
         <div className="flex flex-col gap-3 sm:flex-row">
           <ChaotixButton

@@ -2,14 +2,20 @@ export const TRADING_FEE_BPS = 100; // 1% = 100 bps
 export const REFERRER_FEE_BPS = 50; // 50% of fee to referrer
 export const PLATFORM_FEE_BPS = 50;
 
-// AMM liquidity pool
-export const INITIAL_POOL_TOKENS = 1000;
-export const INITIAL_POOL_SHARES = 100_000; // so initial price = 0.01
+// AMM liquidity pool — automatic liquidity seeding from treasury (prevents infinite slippage, dead markets)
+export const INITIAL_POOL_TOKENS = 10_000;
+export const INITIAL_POOL_SHARES = 10_000;
+export const INITIAL_POOL_TOKENS_LEGACY = 1000;
+export const INITIAL_POOL_SHARES_LEGACY = 100_000; // legacy: initial price 0.01 (no longer used for new markets)
 
 // Trade limits
 export const MIN_TRADE_AMOUNT = 1;
 export const MIN_TRADE_SHARES = 0.01;
 export const MAX_TRADE_AMOUNT = 1_000_000;
+/** Early-stage: max trade size (cost or proceeds) per single trade. */
+export const MAX_TRADE_SIZE = 50_000;
+/** Early-stage: max number of trades per user per calendar day (anti-abuse). */
+export const MAX_DAILY_TRADES = 100;
 export const TRADE_RATE_LIMIT_PER_MINUTE = 30;
 export const PUBLIC_API_RATE_LIMIT_PER_MINUTE = 120;
 export const PORTFOLIO_FEED_RATE_LIMIT_PER_MINUTE = 60;
@@ -94,10 +100,12 @@ export const MAX_POSITION_PCT_OF_SUPPLY_RISK = 0.25; // max single position as s
 export const MAX_DAILY_LOSS_PCT = 0.2; // 20% of portfolio value
 export const MAX_MARKET_EXPOSURE_PCT = 0.5; // max value in single market vs total portfolio
 
-// Phase 7: Creator economy
+// Phase 7: Creator economy (incentive system)
 export const CREATOR_FEE_SHARE_PCT = 10; // 10% of platform fees from their market
 export const CREATOR_MILESTONE_TRADES = [100, 500, 1000] as const;
-export const CREATOR_MILESTONE_BONUS = 5; // tokens per milestone
+export const CREATOR_MILESTONE_VOLUME = 10_000; // volume milestone
+export const CREATOR_MILESTONE_BONUS = 5; // balance reward per milestone
+export const CREATOR_MILESTONE_REPUTATION = 5; // reputation increase per milestone
 
 // Phase 7: Market lifecycle stages
 export const MARKET_STAGE_EMERGING = "emerging";
@@ -130,8 +138,20 @@ export const FOUNDING_TRADER_CAP = 500;
 export const FOUNDING_TRADER_FEE_BPS = 50;   // 0.5% for founding traders
 
 // Market gravity
-export const GRAVITY_THRESHOLD = 5;           // above this: homepage + discovery + highlight
+export const GRAVITY_THRESHOLD = 0.4;         // narrative GravityScore in [0,1]; above this: homepage + discovery + highlight
 
 // Public launch: when enabled, no invite required; discovery/viral/gravity amplification on
 export const PUBLIC_LAUNCH_MODE =
   process.env.PUBLIC_LAUNCH_MODE === "true" || process.env.PUBLIC_LAUNCH_MODE === "1";
+
+// Market creation governance: min reputation, proposals, upvotes, alias-based duplicate prevention
+// Process: user proposes market → community upvotes → if threshold reached → market created (aliases prevent duplicates)
+// Early-stage: governance proposals disabled (featureFlag "future"); direct create for all.
+export const MIN_REPUTATION_TO_PROPOSE = 0; // min rep to submit a proposal
+export const MIN_REPUTATION_TO_CREATE_DIRECT = 0; // early-stage: direct create for all; set to 5 when governance proposals enabled
+export const PROPOSAL_UPVOTE_THRESHOLD = 5; // upvotes needed to auto-create market
+
+// Curated narratives: when true, only admins can create markets; discovery shows core OR volume >= threshold
+export const CURATED_NARRATIVE_MODE = true;
+// Discovery only shows core markets OR volume above this
+export const DISCOVERY_VOLUME_THRESHOLD = 100; // non-core markets need volume >= this to appear in discovery

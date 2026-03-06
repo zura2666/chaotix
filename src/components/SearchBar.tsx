@@ -147,13 +147,15 @@ export function SearchBar({ user, onOpenAuth, onCreateMarketRequest, compact, sh
           {!loading && noResults && (
             <div className="px-4 py-3 overscroll-contain">
               <p className="text-sm text-slate-500">Market not found.</p>
-              <button
-                type="button"
-                onClick={handleCreateMarketClick}
-                className="mt-2 h-13 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
-              >
-                {normalize(q).length >= 3 ? `Create "${q.trim().slice(0, 24)}${q.trim().length > 24 ? "…" : ""}" Market` : "Create Market"}
-              </button>
+              {user?.isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleCreateMarketClick}
+                  className="mt-2 h-13 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
+                >
+                  {normalize(q).length >= 3 ? `Create "${q.trim().slice(0, 24)}${q.trim().length > 24 ? "…" : ""}" Market` : "Create Market"}
+                </button>
+              )}
             </div>
           )}
           {!loading &&
